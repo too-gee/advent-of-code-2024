@@ -12,7 +12,7 @@ import (
 
 func main() {
 	// Open the file
-	file, err := os.Open("input.txt")
+	file, err := os.Open(os.Args[1])
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
