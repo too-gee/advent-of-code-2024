@@ -9,26 +9,7 @@ import (
 )
 
 func main() {
-	// Open the file
-	file, err := os.Open(os.Args[1])
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	// Read line by line
-	allMatches := [][]string{}
-	re := regexp.MustCompile(`mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)`)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := re.FindAllStringSubmatch(line, -1)
-
-		allMatches = append(allMatches, matches...)
-	}
+	allMatches := readFileToMatches(os.Args[1])
 
 	// part 1 && part 2
 
@@ -55,4 +36,27 @@ func main() {
 
 	fmt.Printf("Running total: %d\n", runningTotal)
 	fmt.Printf("Switched running total: %d\n", switchedRunningTotal)
+}
+
+func readFileToMatches(filePath string) [][]string {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return nil
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	allMatches := [][]string{}
+	re := regexp.MustCompile(`mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)`)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := re.FindAllStringSubmatch(line, -1)
+
+		allMatches = append(allMatches, matches...)
+	}
+
+	return allMatches
 }

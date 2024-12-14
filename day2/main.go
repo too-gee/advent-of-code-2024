@@ -9,31 +9,7 @@ import (
 )
 
 func main() {
-	// Open the file
-	file, err := os.Open(os.Args[1])
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	// Read line by line
-	var reports [][]int
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		rawValues := strings.Fields(line)
-
-		var values []int
-		for _, rawValue := range rawValues {
-			value, _ := strconv.Atoi(rawValue)
-			values = append(values, value)
-		}
-
-		reports = append(reports, values)
-	}
+	reports := readFileToReports(os.Args[1])
 
 	// part 1
 	safeReports := 0
@@ -124,4 +100,32 @@ func excludeIndex(slice []int, index int) []int {
 	newSlice = append(newSlice, slice[:index]...)
 	newSlice = append(newSlice, slice[index+1:]...)
 	return newSlice
+}
+
+func readFileToReports(filePath string) [][]int {
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return nil
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var reports [][]int
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		rawValues := strings.Fields(line)
+
+		var values []int
+		for _, rawValue := range rawValues {
+			value, _ := strconv.Atoi(rawValue)
+			values = append(values, value)
+		}
+
+		reports = append(reports, values)
+	}
+
+	return reports
 }
