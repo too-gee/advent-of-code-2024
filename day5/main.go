@@ -21,27 +21,77 @@ func main() {
 
 	// part 1
 	pageSum := 0
+	incorrectUpdates := [][]int{}
 
 	for _, update := range updates {
-		isCorrect := true
-		for _, rule := range rules {
-			if getIndex(update, rule[0]) == -1 || getIndex(update, rule[1]) == -1 {
-				continue
-			}
-
-			if getIndex(update, rule[0]) >= getIndex(update, rule[1]) {
-				isCorrect = false
-				break
-			}
-		}
-
-		if isCorrect {
-			middleIndex := int((len(update) - 1) / 2)
-			pageSum += update[middleIndex]
+		if updateIsCorrect(update, rules) {
+			pageSum += middlePageValue(update)
+		} else {
+			incorrectUpdates = append(incorrectUpdates, update)
 		}
 	}
 
 	fmt.Printf("The sum of the middle page numbers is %d\n", pageSum)
+
+	// part 2
+	correctedPageSum := 0
+	for _, update := range incorrectUpdates {
+		ruleIndex := 0
+
+		for {
+			if updateIsCorrect(update, rules) {
+				break
+			}
+
+			if ruleIndex >= len(rules) {
+				ruleIndex = 0
+			}
+
+			rule := rules[ruleIndex]
+
+			// if we fail a rule, swap the numbers around
+			if !ruleIsFollowed(rule, update) {
+				firstIndex := indexOf(update, rule[0])
+				secondIndex := indexOf(update, rule[1])
+
+				tmp := update[firstIndex]
+				update[firstIndex] = update[secondIndex]
+				update[secondIndex] = tmp
+			}
+
+			ruleIndex += 1
+		}
+
+		correctedPageSum += middlePageValue(update)
+	}
+
+	fmt.Printf("The sum of the corrected middle page numbers is %d\n", correctedPageSum)
+}
+
+func updateIsCorrect(update []int, rules [][]int) bool {
+	for _, rule := range rules {
+		if !ruleIsFollowed(rule, update) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func ruleIsFollowed(rule []int, update []int) bool {
+	firstIndex := indexOf(update, rule[0])
+	secondIndex := indexOf(update, rule[1])
+
+	if firstIndex == -1 || secondIndex == -1 {
+		return true
+	}
+
+	return firstIndex < secondIndex
+}
+
+func middlePageValue(update []int) int {
+	middleIndex := int((len(update) - 1) / 2)
+	return update[middleIndex]
 }
 
 func readInput(filePath string) ([][]int, [][]int) {
@@ -92,7 +142,7 @@ func readInput(filePath string) ([][]int, [][]int) {
 	return rules, updates
 }
 
-func getIndex(slice []int, value int) int {
+func indexOf(slice []int, value int) int {
 	for i, v := range slice {
 		if v == value {
 			return i
