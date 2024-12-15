@@ -50,6 +50,7 @@ func main() {
 	fmt.Printf("There are %d X-MAS matches.\n", xMatches)
 }
 
+// returns the number of times a version of an X-MAS appears in the charSlice
 func getXMatches(matchPattern [][]string, charSlice [][]string) int {
 	matchWidth := len(matchPattern[0])
 	matchHeight := len(matchPattern)
@@ -76,6 +77,8 @@ func getXMatches(matchPattern [][]string, charSlice [][]string) int {
 	return matches
 }
 
+// returns true if the matchPattern is a match for charSlice, assumes that
+// matchPattern and charSlice are the same size
 func isMatch(matchPattern [][]string, charSlice [][]string) bool {
 	for x := 0; x < len(matchPattern[0]); x++ {
 		for y := 0; y < len(matchPattern); y++ {
@@ -92,6 +95,8 @@ func isMatch(matchPattern [][]string, charSlice [][]string) bool {
 	return true
 }
 
+// returns the number of times the matchString appears in the charSlice
+// when following run coordinates
 func getMatchesInRuns(matchString string, charSlice [][]string, runs [][]coordinates) int {
 	matchCount := 0
 
@@ -112,6 +117,8 @@ func getMatchesInRuns(matchString string, charSlice [][]string, runs [][]coordin
 	return matchCount
 }
 
+// creates a lists of coordinates that represent lines of characters going
+// from the top right to the bottom left
 func runsSouthWest(rows int, cols int, minLength int) [][]coordinates {
 	var result [][]coordinates
 
@@ -136,6 +143,8 @@ func runsSouthWest(rows int, cols int, minLength int) [][]coordinates {
 	return result
 }
 
+// creates a lists of coordinates that represent lines of characters going
+// from the top left to the bottom right
 func runsSouthEast(rows int, cols int, minLength int) [][]coordinates {
 	var result [][]coordinates
 
@@ -160,6 +169,8 @@ func runsSouthEast(rows int, cols int, minLength int) [][]coordinates {
 	return result
 }
 
+// creates a lists of coordinates that represent lines of characters going
+// from the left to the right
 func runsEast(rows int, cols int) [][]coordinates {
 	var result [][]coordinates
 
@@ -176,6 +187,8 @@ func runsEast(rows int, cols int) [][]coordinates {
 	return result
 }
 
+// creates a lists of coordinates that represent lines of characters going
+// from the top to the bottom
 func runsSouth(rows int, cols int) [][]coordinates {
 	var result [][]coordinates
 
