@@ -19,7 +19,7 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	list1, list2 := readFileToLists(fileName)
+	list1, list2 := readInput(fileName)
 
 	// part 1
 	differences := 0
@@ -47,7 +47,7 @@ func main() {
 	fmt.Printf("The similarity score is %d\n", similarity)
 }
 
-func readFileToLists(filePath string) ([]int, []int) {
+func readInput(filePath string) ([]int, []int) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)

@@ -18,7 +18,7 @@ func main() {
 	}
 
 	// wordSearch[y][x] is the character at row y and column x
-	wordSearch := readFileToCharSlice(fileName)
+	wordSearch := readInput(fileName)
 
 	// part 1
 	const matchString = "XMAS"
@@ -205,7 +205,7 @@ func runsSouth(rows int, cols int) [][]coordinates {
 	return result
 }
 
-func readFileToCharSlice(filePath string) [][]string {
+func readInput(filePath string) [][]string {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)

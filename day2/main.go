@@ -17,7 +17,7 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	reports := readFileToReports(fileName)
+	reports := readInput(fileName)
 
 	// part 1
 	safeReports := 0
@@ -110,7 +110,7 @@ func excludeIndex(slice []int, index int) []int {
 	return newSlice
 }
 
-func readFileToReports(filePath string) [][]int {
+func readInput(filePath string) [][]int {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)

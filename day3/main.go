@@ -46,7 +46,7 @@ func main() {
 	fmt.Printf("Switched running total: %d\n", switchedRunningTotal)
 }
 
-func readFileToMatches(filePath string) [][]string {
+func readInput(filePath string) [][]string {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
