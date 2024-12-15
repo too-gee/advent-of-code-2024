@@ -21,7 +21,7 @@ func main() {
 	wordSearch := readFileToCharSlice(fileName)
 
 	// part 1
-	matchString := "XMAS"
+	const matchString = "XMAS"
 
 	rows := len(wordSearch)
 	cols := len(wordSearch[0])
