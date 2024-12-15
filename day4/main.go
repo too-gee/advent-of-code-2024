@@ -10,7 +10,15 @@ import (
 
 func main() {
 	// wordSearch[y][x] is the character at row y and column x
-	wordSearch := readFileToCharSlice(os.Args[1])
+	var fileName string
+
+	if len(os.Args) == 2 {
+		fileName = os.Args[1]
+	} else {
+		fileName = "input.txt"
+	}
+
+	wordSearch := readFileToCharSlice(fileName)
 
 	// part 1
 	matchString := "XMAS"

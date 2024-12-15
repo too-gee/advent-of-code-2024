@@ -9,7 +9,15 @@ import (
 )
 
 func main() {
-	reports := readFileToReports(os.Args[1])
+	var fileName string
+
+	if len(os.Args) == 2 {
+		fileName = os.Args[1]
+	} else {
+		fileName = "input.txt"
+	}
+
+	reports := readFileToReports(fileName)
 
 	// part 1
 	safeReports := 0

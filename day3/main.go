@@ -9,7 +9,15 @@ import (
 )
 
 func main() {
-	allMatches := readFileToMatches(os.Args[1])
+	var fileName string
+
+	if len(os.Args) == 2 {
+		fileName = os.Args[1]
+	} else {
+		fileName = "input.txt"
+	}
+
+	allMatches := readFileToMatches(fileName)
 
 	// part 1 && part 2
 

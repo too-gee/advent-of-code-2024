@@ -11,8 +11,15 @@ import (
 )
 
 func main() {
-	// Open the file
-	list1, list2 := readFileToLists(os.Args[1])
+	var fileName string
+
+	if len(os.Args) == 2 {
+		fileName = os.Args[1]
+	} else {
+		fileName = "input.txt"
+	}
+
+	list1, list2 := readFileToLists(fileName)
 
 	// part 1
 	differences := 0
