@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	// wordSearch[y][x] is the character at row y and column x
 	var fileName string
 
 	if len(os.Args) == 2 {
@@ -18,6 +17,7 @@ func main() {
 		fileName = "input.txt"
 	}
 
+	// wordSearch[y][x] is the character at row y and column x
 	wordSearch := readFileToCharSlice(fileName)
 
 	// part 1
