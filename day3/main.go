@@ -17,7 +17,7 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	allMatches := readFileToMatches(fileName)
+	allMatches := readInput(fileName)
 
 	// part 1 && part 2
 
