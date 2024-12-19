@@ -84,7 +84,6 @@ func main() {
 
 		fmt.Printf("Stone count after %d optimized blinks: %d\n", blink, metaStones.count())
 	}
-
 }
 
 func readInput(filePath string) []int {
