@@ -7,6 +7,7 @@ Here we go again! This year I'm working in golang.
 ``` text
       --------Part 1---------   --------Part 2---------
 Day       Time    Rank  Score       Time    Rank  Score
+ 12       >24h   48916      0       >24h   40825      0
  11       >24h   59926      0       >24h   51650      0
  10       >24h   57357      0       >24h   56163      0
   9       >24h   65548      0       >24h   54887      0
