@@ -36,16 +36,7 @@ func main() {
 
 	warehouse.draw()
 
-	coordSum := 0
-	for y := range warehouse.grid.height() {
-		for x := range warehouse.grid.width() {
-			if warehouse.grid[y][x] == BOX {
-				coordSum += (100 * y) + x
-			}
-		}
-	}
-
-	fmt.Printf("The GPS coordinate sum is %d\n", coordSum)
+	fmt.Printf("The GPS coordinate sum is %d\n", warehouse.gpsValue())
 
 	// part 2
 	grid, moves = readInput(fileName)
@@ -62,16 +53,7 @@ func main() {
 	}
 	warehouse.draw()
 
-	coordSum = 0
-	for y := range warehouse.grid.height() {
-		for x := range warehouse.grid.width() {
-			if warehouse.grid[y][x] == "[" {
-				coordSum += (100 * y) + x
-			}
-		}
-	}
-
-	fmt.Printf("The GPS coordinate sum is %d\n", coordSum)
+	fmt.Printf("The GPS coordinate sum is %d\n", warehouse.gpsValue())
 }
 
 func readInput(filePath string) (Grid, []string) {
@@ -541,4 +523,19 @@ func (w *Warehouse) wideMoveRobot(move string) {
 			(*w).grid[a.y][a.x] = "."
 		}
 	}
+}
+
+func (w Warehouse) gpsValue() int {
+	w.turnToFace(N)
+
+	coordSum := 0
+	for y := range w.grid.height() {
+		for x := range w.grid.width() {
+			if w.grid[y][x] == "[" || w.grid[y][x] == BOX {
+				coordSum += (100 * y) + x
+			}
+		}
+	}
+
+	return coordSum
 }
