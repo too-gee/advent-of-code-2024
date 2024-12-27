@@ -58,11 +58,7 @@ func main() {
 			fmt.Printf("Move: %d = %v\n", i, move)
 		}
 
-		if move == LEFT || move == RIGHT {
-			warehouse.moveRobot(move)
-		} else {
-			warehouse.wideMoveRobot(move)
-		}
+		warehouse.wideMoveRobot(move)
 	}
 	warehouse.draw()
 
@@ -428,7 +424,7 @@ func (w *Warehouse) moveRobot(move string) {
 	}
 }
 
-func (w Warehouse) canMove(currentLoc Coord, move string) (bool, []Coord) {
+func (w Warehouse) canMove(currentLoc Coord, move string) []Coord {
 	var moveAmt Coord
 
 	switch move {
@@ -454,55 +450,50 @@ func (w Warehouse) canMove(currentLoc Coord, move string) (bool, []Coord) {
 	switch nextLocStr {
 	// Empty space, can move
 	case ".":
-		movers = []Coord{currentLoc}
-		return true, movers
+		return []Coord{currentLoc}
 	// Just a wall, must stop
 	case "#":
-		return false, []Coord{}
+		return nil
 	// Normal width box, check the next space
 	case "O":
-		movers = []Coord{currentLoc}
-
-		canMove, newMovers := w.canMove(nextLoc, move)
-
-		if !canMove {
-			return false, []Coord{}
+		newMovers := w.canMove(nextLoc, move)
+		if len(newMovers) == 0 {
+			return nil
 		}
-
+		movers = []Coord{currentLoc}
 		movers = append(movers, newMovers...)
 	// Double width box, check both spaces
 	case "[":
-		movers = []Coord{currentLoc}
-
-		canMove, newMovers := w.canMove(nextLoc, move)
-		if !canMove {
-			return false, []Coord{}
+		newMovers := w.canMove(nextLoc, move)
+		if len(newMovers) == 0 {
+			return nil
 		}
+		movers = []Coord{currentLoc}
 		movers = append(movers, newMovers...)
 
 		rightNextLoc := Coord{x: nextLoc.x + 1, y: nextLoc.y}
-		canMove, newMovers = w.canMove(rightNextLoc, move)
-		if !canMove {
-			return false, []Coord{}
+		newMovers = w.canMove(rightNextLoc, move)
+		if len(newMovers) == 0 {
+			return nil
 		}
 		movers = append(movers, newMovers...)
 	case "]":
-		movers = []Coord{currentLoc}
-
-		canMove, newMovers := w.canMove(nextLoc, move)
-		if !canMove {
-			return false, []Coord{}
+		newMovers := w.canMove(nextLoc, move)
+		if len(newMovers) == 0 {
+			return nil
 		}
+		movers = []Coord{currentLoc}
 		movers = append(movers, newMovers...)
 
 		leftNextLoc := Coord{x: nextLoc.x - 1, y: nextLoc.y}
-		canMove, newMovers = w.canMove(leftNextLoc, move)
-		if !canMove {
-			return false, []Coord{}
+		newMovers = w.canMove(leftNextLoc, move)
+		if len(newMovers) == 0 {
+			return nil
 		}
 		movers = append(movers, newMovers...)
 	}
 
+	// sort by y then x
 	sort.Slice(movers, func(i, j int) bool {
 		if movers[i].y == movers[j].y {
 			return movers[i].x < movers[j].x
@@ -511,22 +502,25 @@ func (w Warehouse) canMove(currentLoc Coord, move string) (bool, []Coord) {
 		}
 	})
 
+	// only keep unique values (otherwise we get double-moves)
 	movers = slices.Compact(movers)
 
+	// reverse the order if we're moving down or right so that moves get
+	// executed in the correct order
 	if move == DOWN || move == RIGHT {
 		for i, j := 0, len(movers)-1; i < j; i, j = i+1, j-1 {
 			movers[i], movers[j] = movers[j], movers[i]
 		}
 	}
 
-	return true, movers
+	return movers
 }
 
 func (w *Warehouse) wideMoveRobot(move string) {
 	robot := w.grid.find(ROBOT)
-	canMove, movers := w.canMove(robot, move)
+	movers := w.canMove(robot, move)
 
-	if canMove {
+	if len(movers) > 0 {
 		var moveAmt Coord
 
 		switch move {
@@ -539,8 +533,6 @@ func (w *Warehouse) wideMoveRobot(move string) {
 		case DOWN:
 			moveAmt = Coord{x: 0, y: 1}
 		}
-
-		fmt.Println(movers)
 
 		for _, a := range movers {
 			b := Coord{x: a.x + moveAmt.x, y: a.y + moveAmt.y}
