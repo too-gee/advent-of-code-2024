@@ -20,51 +20,17 @@ func main() {
 
 	displayMap := !strings.HasSuffix(fileName, "input.txt")
 
+	// part 1
 	grid, moves := readInput(fileName)
 	warehouse := Warehouse{grid: grid, direction: N}
 
-	// part 1
 	for _, move := range moves {
 		if displayMap {
 			warehouse.draw()
 			fmt.Printf("Move: %v\n", move)
 		}
 
-		switch move {
-		case UP:
-			warehouse.turnToFace(E)
-		case RIGHT:
-			warehouse.turnToFace(N)
-		case DOWN:
-			warehouse.turnToFace(W)
-		case LEFT:
-			warehouse.turnToFace(S)
-		}
-
-		robot := warehouse.grid.find(ROBOT)
-		start := robot.x
-		space := float64(slices.Index(warehouse.grid[robot.y][start:], EMPTY))
-		wall := float64(slices.Index(warehouse.grid[robot.y][start:], WALL))
-		end := int(math.Max(math.Min(space, wall), 0)) + start + 1
-
-		row := warehouse.grid[robot.y][start:end]
-		newRow := []string{}
-
-		for _, cell := range row {
-			if cell == EMPTY {
-				newRow = append(newRow, EMPTY)
-			}
-		}
-
-		for _, cell := range row {
-			if cell != EMPTY {
-				newRow = append(newRow, cell)
-			}
-		}
-
-		for x := start; x < end; x++ {
-			warehouse.grid[robot.y][x] = newRow[x-start]
-		}
+		warehouse.moveRobot(move)
 	}
 
 	warehouse.draw()
@@ -79,6 +45,24 @@ func main() {
 	}
 
 	fmt.Printf("The GPS coordinate sum is %d\n", coordSum)
+
+	// part 2
+	grid, moves = readInput(fileName)
+	warehouse = Warehouse{grid: grid}
+	warehouse.widen()
+
+	for _, move := range moves {
+		if displayMap {
+			warehouse.draw()
+			fmt.Printf("Move: %v\n", move)
+		}
+
+		if move == LEFT || move == RIGHT {
+			warehouse.moveRobot(move)
+		}
+	}
+	warehouse.draw()
+
 }
 
 func readInput(filePath string) (Grid, []string) {
@@ -135,6 +119,10 @@ const EMPTY = "."
 const BOX = "O"
 const ROBOT = "@"
 
+const DBL_WALL = "##"
+const DBL_BOX = "[]"
+const DBL_EMPTY = ".."
+
 const N = 0
 const E = 1
 const S = 2
@@ -158,6 +146,7 @@ type Grid [][]string
 type Warehouse struct {
 	grid      Grid
 	direction int
+	wide      bool
 }
 
 func (w *Warehouse) turnToFace(dir int) {
@@ -188,9 +177,37 @@ func (w *Warehouse) turnToFace(dir int) {
 	(*w).direction = dir
 }
 
+func (w *Warehouse) widen() {
+	wideGrid := Grid{}
+
+	for y := range (*w).grid.height() {
+		wideRow := []string{}
+		for x := range (*w).grid.width() {
+			var newItem string
+
+			switch (*w).grid[y][x] {
+			case WALL:
+				newItem = DBL_WALL
+			case BOX:
+				newItem = DBL_BOX
+			case EMPTY:
+				newItem = DBL_EMPTY
+			case ROBOT:
+				newItem = ROBOT + EMPTY
+			}
+
+			wideRow = append(wideRow, strings.Split(newItem, "")...)
+		}
+		wideGrid = append(wideGrid, wideRow)
+	}
+
+	(*w).grid = wideGrid
+	(*w).wide = true
+}
+
 func (w *Warehouse) draw() {
 	(*w).turnToFace(N)
-	(*w).grid.draw()
+	(*w).grid.draw(w.wide)
 }
 
 func (g Grid) isInGrid(l Coord) bool {
@@ -242,7 +259,15 @@ func (g Grid) find(value string) Coord {
 	return Coord{x: -1, y: -1}
 }
 
-func (g Grid) draw() {
+func (g Grid) drawNormal() {
+	g.draw(false)
+}
+
+func (g Grid) drawWide() {
+	g.draw(true)
+}
+
+func (g Grid) draw(wide bool) {
 	yMin, yMax := g.height()-1, 0
 	xMin, xMax := g.width()-1, 0
 
@@ -262,23 +287,31 @@ func (g Grid) draw() {
 	borderThickness := 1
 	bufferThickness := 1
 
+	var xIncr int
+
+	if wide {
+		xIncr = 2
+	} else {
+		xIncr = 1
+	}
+
 	for y := yMin - borderThickness - bufferThickness; y <= yMax+borderThickness+bufferThickness; y++ {
-		for x := xMin - borderThickness - bufferThickness; x <= xMax+borderThickness+bufferThickness; x++ {
+		for x := xMin - ((borderThickness + bufferThickness) * xIncr); x <= xMax+((borderThickness+bufferThickness)*xIncr); x += xIncr {
 			loc := Coord{x, y}
 
 			// print the border
-			if x >= xMin-borderThickness-bufferThickness && x < xMin-bufferThickness ||
+			if x >= xMin-((borderThickness+bufferThickness)*xIncr) && x < xMin-(bufferThickness*xIncr) ||
 				(y >= yMin-borderThickness-bufferThickness && y < yMin-bufferThickness) ||
-				(x > xMax+bufferThickness && x <= xMax+borderThickness+bufferThickness) ||
+				(x > xMax+(bufferThickness*xIncr) && x <= xMax+(borderThickness+bufferThickness)*xIncr) ||
 				(y > yMax+bufferThickness && y <= yMax+borderThickness+bufferThickness) {
 				output += "██"
 				continue
 			}
 
 			// print a buffer
-			if (x >= xMin-borderThickness && x < xMin) ||
+			if (x >= xMin-(borderThickness*xIncr) && x < xMin) ||
 				(y >= yMin-borderThickness && y < yMin) ||
-				(x > xMax && x <= xMax+bufferThickness) ||
+				(x > xMax && x <= xMax+(bufferThickness*xIncr)) ||
 				(y > yMax && y <= yMax+bufferThickness) {
 				output += "　"
 				continue
@@ -286,15 +319,28 @@ func (g Grid) draw() {
 
 			// print the grid
 			if g.isInGrid(loc) {
-				switch g[y][x] {
+				var cell string
+				if wide {
+					cell = g[y][x] + g[y][x+1]
+				} else {
+					cell = g[y][x]
+				}
+
+				switch cell {
 				case ROBOT:
 					output += "🤖"
 				case WALL:
 					output += "⬛"
+				case DBL_WALL:
+					output += "⬛"
 				case BOX:
 					output += "⏺️ "
-				default:
+				case EMPTY:
 					output += "　"
+				case DBL_EMPTY:
+					output += "　"
+				default:
+					output += strings.ReplaceAll(cell, ".", " ")
 				}
 			}
 		}
@@ -302,4 +348,69 @@ func (g Grid) draw() {
 	}
 
 	fmt.Print(output)
+}
+
+func reversed(s []string) []string {
+	newSlice := make([]string, len(s))
+
+	for i := 0; i < len(s); i++ {
+		newSlice[i] = s[len(s)-i-1]
+	}
+
+	return newSlice
+}
+
+func (w *Warehouse) moveRobot(move string) {
+	switch move {
+	case UP:
+		(*w).turnToFace(E)
+	case RIGHT:
+		(*w).turnToFace(N)
+	case DOWN:
+		(*w).turnToFace(E)
+	case LEFT:
+		(*w).turnToFace(N)
+	}
+
+	var tmp []string
+	robot := w.grid.find(ROBOT)
+	var start int
+
+	if move == LEFT || move == DOWN {
+		tmp = reversed(w.grid[robot.y])
+		start = w.grid.width() - robot.x - 1
+	} else {
+		tmp = w.grid[robot.y]
+		start = robot.x
+	}
+
+	space := float64(slices.Index(tmp[start:], EMPTY))
+	wall := float64(slices.Index(tmp[start:], WALL))
+	end := int(math.Max(math.Min(space, wall), 0)) + start + 1
+
+	row := tmp[start:end]
+	newRow := []string{}
+
+	for _, cell := range row {
+		if cell == EMPTY {
+			newRow = append(newRow, EMPTY)
+		}
+	}
+
+	for _, cell := range row {
+		if cell != EMPTY {
+			newRow = append(newRow, cell)
+		}
+	}
+
+	if move == LEFT || move == DOWN {
+		newRow = reversed(newRow)
+		tmpStart := start
+		start = w.grid.width() - end
+		end = w.grid.width() - tmpStart
+	}
+
+	for x := start; x < end; x++ {
+		(*w).grid[robot.y][x] = newRow[x-start]
+	}
 }
