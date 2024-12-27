@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"slices"
+	"sort"
 	"strings"
 )
 
@@ -51,18 +52,30 @@ func main() {
 	warehouse = Warehouse{grid: grid}
 	warehouse.widen()
 
-	for _, move := range moves {
+	for i, move := range moves {
 		if displayMap {
 			warehouse.draw()
-			fmt.Printf("Move: %v\n", move)
+			fmt.Printf("Move: %d = %v\n", i, move)
 		}
 
 		if move == LEFT || move == RIGHT {
 			warehouse.moveRobot(move)
+		} else {
+			warehouse.wideMoveRobot(move)
 		}
 	}
 	warehouse.draw()
 
+	coordSum = 0
+	for y := range warehouse.grid.height() {
+		for x := range warehouse.grid.width() {
+			if warehouse.grid[y][x] == "[" {
+				coordSum += (100 * y) + x
+			}
+		}
+	}
+
+	fmt.Printf("The GPS coordinate sum is %d\n", coordSum)
 }
 
 func readInput(filePath string) (Grid, []string) {
@@ -412,5 +425,128 @@ func (w *Warehouse) moveRobot(move string) {
 
 	for x := start; x < end; x++ {
 		(*w).grid[robot.y][x] = newRow[x-start]
+	}
+}
+
+func (w Warehouse) canMove(currentLoc Coord, move string) (bool, []Coord) {
+	var moveAmt Coord
+
+	switch move {
+	case LEFT:
+		moveAmt = Coord{x: -1, y: 0}
+	case RIGHT:
+		moveAmt = Coord{x: 1, y: 0}
+	case UP:
+		moveAmt = Coord{x: 0, y: -1}
+	case DOWN:
+		moveAmt = Coord{x: 0, y: 1}
+	}
+
+	movers := []Coord{}
+	nextLoc := Coord{x: currentLoc.x + moveAmt.x, y: currentLoc.y + moveAmt.y}
+
+	// If we're moving left or right, pretend the split boxes are just normal boxes
+	nextLocStr := w.grid[nextLoc.y][nextLoc.x]
+	if (move == LEFT || move == RIGHT) && (nextLocStr == "[" || nextLocStr == "]") {
+		nextLocStr = "O"
+	}
+
+	switch nextLocStr {
+	// Empty space, can move
+	case ".":
+		movers = []Coord{currentLoc}
+		return true, movers
+	// Just a wall, must stop
+	case "#":
+		return false, []Coord{}
+	// Normal width box, check the next space
+	case "O":
+		movers = []Coord{currentLoc}
+
+		canMove, newMovers := w.canMove(nextLoc, move)
+
+		if !canMove {
+			return false, []Coord{}
+		}
+
+		movers = append(movers, newMovers...)
+	// Double width box, check both spaces
+	case "[":
+		movers = []Coord{currentLoc}
+
+		canMove, newMovers := w.canMove(nextLoc, move)
+		if !canMove {
+			return false, []Coord{}
+		}
+		movers = append(movers, newMovers...)
+
+		rightNextLoc := Coord{x: nextLoc.x + 1, y: nextLoc.y}
+		canMove, newMovers = w.canMove(rightNextLoc, move)
+		if !canMove {
+			return false, []Coord{}
+		}
+		movers = append(movers, newMovers...)
+	case "]":
+		movers = []Coord{currentLoc}
+
+		canMove, newMovers := w.canMove(nextLoc, move)
+		if !canMove {
+			return false, []Coord{}
+		}
+		movers = append(movers, newMovers...)
+
+		leftNextLoc := Coord{x: nextLoc.x - 1, y: nextLoc.y}
+		canMove, newMovers = w.canMove(leftNextLoc, move)
+		if !canMove {
+			return false, []Coord{}
+		}
+		movers = append(movers, newMovers...)
+	}
+
+	sort.Slice(movers, func(i, j int) bool {
+		if movers[i].y == movers[j].y {
+			return movers[i].x < movers[j].x
+		} else {
+			return movers[i].y < movers[j].y
+		}
+	})
+
+	movers = slices.Compact(movers)
+
+	if move == DOWN || move == RIGHT {
+		for i, j := 0, len(movers)-1; i < j; i, j = i+1, j-1 {
+			movers[i], movers[j] = movers[j], movers[i]
+		}
+	}
+
+	return true, movers
+}
+
+func (w *Warehouse) wideMoveRobot(move string) {
+	robot := w.grid.find(ROBOT)
+	canMove, movers := w.canMove(robot, move)
+
+	if canMove {
+		var moveAmt Coord
+
+		switch move {
+		case LEFT:
+			moveAmt = Coord{x: -1, y: 0}
+		case RIGHT:
+			moveAmt = Coord{x: 1, y: 0}
+		case UP:
+			moveAmt = Coord{x: 0, y: -1}
+		case DOWN:
+			moveAmt = Coord{x: 0, y: 1}
+		}
+
+		fmt.Println(movers)
+
+		for _, a := range movers {
+			b := Coord{x: a.x + moveAmt.x, y: a.y + moveAmt.y}
+
+			(*w).grid[b.y][b.x] = (*w).grid[a.y][a.x]
+			(*w).grid[a.y][a.x] = "."
+		}
 	}
 }
