@@ -7,6 +7,8 @@ import (
 	"os"
 	"slices"
 	"strings"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -19,21 +21,11 @@ func main() {
 	}
 
 	// part 1
-	maze := readInput(fileName)
+	maze := readInput(fileName).fillDeadEnds()
 
-	for y := range maze {
-		for x := range maze[y] {
-			loc := Coord{x: x, y: y}
-			if maze.isPassable(loc) && maze.isDeadEnd(loc) {
-				maze.fillDeadEnd(loc)
-			}
-		}
-	}
-
-	maze.draw(map[string][]Coord{})
-	cost, path := maze.solve(maze.find(START), maze.find(END))
+	maze.draw(map[string][]shared.Coord{})
+	cost := maze.solve(maze.find(START), maze.find(END))
 	fmt.Printf("Lowest cost: %d\n", cost)
-	fmt.Printf("Path: %v\n", path)
 }
 
 func readInput(filePath string) Grid {
@@ -60,24 +52,36 @@ const EMPTY = "."
 const START = "S"
 const END = "E"
 
-func (g Grid) inGrid(loc Coord) bool {
-	return loc.y >= 0 &&
-		loc.y < len(g) &&
-		loc.x >= 0 &&
-		loc.x < len(g[loc.y])
+func (g Grid) fillDeadEnds() Grid {
+	for y := range g {
+		for x := range g[0] {
+			loc := shared.Coord{X: x, Y: y}
+			if g.isPassable(loc) && g.isDeadEnd(loc) {
+				g.fillDeadEnd(loc)
+			}
+		}
+	}
+
+	return g
 }
 
-func (g Grid) cellType(loc Coord) string {
-	return g[loc.y][loc.x]
+func (g Grid) inGrid(loc shared.Coord) bool {
+	return loc.Y >= 0 &&
+		loc.Y < len(g) &&
+		loc.X >= 0 &&
+		loc.X < len(g[loc.Y])
 }
 
-func (g Grid) neighbors(loc Coord) map[string]Coord {
-	neighbors := map[string]Coord{}
+func (g Grid) cellType(loc shared.Coord) string {
+	return g[loc.Y][loc.X]
+}
 
-	for dir, neighbor := range loc.neighbors() {
+func (g Grid) neighbors(loc shared.Coord) map[string]shared.Coord {
+	neighbors := map[string]shared.Coord{}
+
+	for dir, neighbor := range loc.Neighbors() {
 		if g.inGrid(neighbor) &&
-			g.cellType(neighbor) != WALL &&
-			g.cellType(neighbor) != FILL {
+			!slices.Contains([]string{WALL, FILL}, g[neighbor.Y][neighbor.X]) {
 			neighbors[dir] = neighbor
 		}
 	}
@@ -85,41 +89,23 @@ func (g Grid) neighbors(loc Coord) map[string]Coord {
 	return neighbors
 }
 
-func (g Grid) isPassable(loc Coord) bool {
-	return g.cellType(loc) == EMPTY ||
-		g.cellType(loc) == START ||
-		g.cellType(loc) == END
+func (g Grid) isPassable(loc shared.Coord) bool {
+	return slices.Contains([]string{EMPTY, START, END}, g[loc.Y][loc.X])
 }
 
-func (g Grid) isDeadEnd(loc Coord) bool {
-	if g.cellType(loc) == START ||
-		g.cellType(loc) == END {
+func (g Grid) isDeadEnd(loc shared.Coord) bool {
+	if slices.Contains([]string{START, END}, g[loc.Y][loc.X]) {
 		return false
 	}
-	options := len(g.neighbors(loc))
 
-	return options == 1
-}
-
-type Coord struct {
-	x int
-	y int
-}
-
-func (c Coord) neighbors() map[string]Coord {
-	return map[string]Coord{
-		"W": {x: c.x - 1, y: c.y},
-		"E": {x: c.x + 1, y: c.y},
-		"N": {x: c.x, y: c.y - 1},
-		"S": {x: c.x, y: c.y + 1},
-	}
+	return len(g.neighbors(loc)) == 1
 }
 
 type State struct {
-	loc  Coord
+	loc  shared.Coord
 	dir  string
 	cost int
-	path []Coord
+	path []shared.Coord
 }
 
 type PriorityQueue []*State
@@ -151,14 +137,14 @@ func (q *PriorityQueue) Pop() interface{} {
 
 type Grid [][]string
 
-func (g Grid) solve(start, end Coord) (int, []Coord) {
+func (g Grid) solve(start, end shared.Coord) int {
 	queue := PriorityQueue{}
 	heap.Init(&queue)
 	heap.Push(&queue, &State{
 		loc:  start,
 		dir:  "E",
 		cost: 0,
-		path: []Coord{start},
+		path: []shared.Coord{start},
 	})
 
 	visited := map[string]bool{}
@@ -171,10 +157,10 @@ func (g Grid) solve(start, end Coord) (int, []Coord) {
 		current := heap.Pop(&queue).(*State)
 
 		if current.loc == end {
-			return current.cost, current.path
+			return current.cost
 		}
 
-		id := fmt.Sprintf("%d.%d.%s", current.loc.x, current.loc.y, current.dir)
+		id := fmt.Sprintf("%d.%d.%s", current.loc.X, current.loc.Y, current.dir)
 
 		if visited[id] {
 			continue
@@ -200,13 +186,13 @@ func (g Grid) solve(start, end Coord) (int, []Coord) {
 		}
 	}
 
-	return -1, nil
+	return -1
 }
 
-func (g Grid) draw(paths map[string][]Coord) {
+func (g Grid) draw(paths map[string][]shared.Coord) {
 	for y := range g {
 		for x := range g[y] {
-			drawLoc := Coord{x: x, y: y}
+			drawLoc := shared.Coord{X: x, Y: y}
 
 			drawn := false
 
@@ -226,30 +212,30 @@ func (g Grid) draw(paths map[string][]Coord) {
 	}
 }
 
-func (g Grid) find(value string) Coord {
+func (g Grid) find(value string) shared.Coord {
 
 	for y, row := range g {
 		for x := range row {
 			if g[y][x] == value {
 
-				return Coord{x: x, y: y}
+				return shared.Coord{X: x, Y: y}
 			}
 		}
 	}
 
-	return Coord{x: -1, y: -1}
+	return shared.Coord{X: -1, Y: -1}
 }
 
-func (g *Grid) fillDeadEnd(loc Coord) {
+func (g *Grid) fillDeadEnd(loc shared.Coord) {
 	for {
 		neighbors := (*g).neighbors(loc)
 
-		if len(neighbors) != 1 {
+		if len(neighbors) != 1 || (*g)[loc.Y][loc.X] == START {
 			break
 		}
 
 		for _, neighbor := range neighbors {
-			(*g)[loc.y][loc.x] = FILL
+			(*g)[loc.Y][loc.X] = FILL
 			loc = neighbor
 		}
 	}
