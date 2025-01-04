@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -70,17 +72,12 @@ func readInput(filePath string) Map {
 
 type Map [][]int
 
-type Coord struct {
-	x int
-	y int
-}
-
-func (m Map) value(loc Coord) int {
-	if loc.x < 0 || loc.x >= len(m[0]) || loc.y < 0 || loc.y >= len(m) {
+func (m Map) value(loc shared.Coord) int {
+	if loc.X < 0 || loc.X >= len(m[0]) || loc.Y < 0 || loc.Y >= len(m) {
 		return -1
 	}
 
-	return m[loc.y][loc.x]
+	return m[loc.Y][loc.X]
 }
 
 func (m Map) draw() {
@@ -92,13 +89,13 @@ func (m Map) draw() {
 	}
 }
 
-func (m Map) trailHeads() []Coord {
-	var trailHeads []Coord
+func (m Map) trailHeads() []shared.Coord {
+	var trailHeads []shared.Coord
 
 	for y, row := range m {
 		for x, cell := range row {
 			if cell == 0 {
-				trailHeads = append(trailHeads, Coord{x: x, y: y})
+				trailHeads = append(trailHeads, shared.Coord{X: x, Y: y})
 			}
 		}
 	}
@@ -106,13 +103,13 @@ func (m Map) trailHeads() []Coord {
 	return trailHeads
 }
 
-func (m Map) neighbors(loc Coord) []Coord {
-	neighbors := []Coord{}
+func (m Map) neighbors(loc shared.Coord) []shared.Coord {
+	neighbors := []shared.Coord{}
 
-	offsets := []Coord{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
+	offsets := []shared.Coord{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
 
 	for _, offset := range offsets {
-		candidate := Coord{x: loc.x + offset.x, y: loc.y + offset.y}
+		candidate := shared.Coord{X: loc.X + offset.X, Y: loc.Y + offset.Y}
 		if m.value(candidate) == m.value(loc)+1 {
 			neighbors = append(neighbors, candidate)
 		}
@@ -121,16 +118,16 @@ func (m Map) neighbors(loc Coord) []Coord {
 	return neighbors
 }
 
-func (m Map) trailEnds(loc Coord) []Coord {
+func (m Map) trailEnds(loc shared.Coord) []shared.Coord {
 	if m.value(loc) == -1 {
 		return nil
 	}
 
 	if m.value(loc) == 9 {
-		return []Coord{loc}
+		return []shared.Coord{loc}
 	}
 
-	trailEnds := []Coord{}
+	trailEnds := []shared.Coord{}
 
 	for _, nextLoc := range m.neighbors(loc) {
 		newEnds := m.trailEnds(nextLoc)
@@ -145,7 +142,7 @@ func (m Map) trailEnds(loc Coord) []Coord {
 	return trailEnds
 }
 
-func (m Map) trailPaths(loc Coord) int {
+func (m Map) trailPaths(loc shared.Coord) int {
 	if m.value(loc) == -1 {
 		return 0
 	}

@@ -6,6 +6,8 @@ import (
 	"math"
 	"os"
 	"strings"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -80,11 +82,6 @@ func makeGrid(width int, height int) Grid {
 	return tmp
 }
 
-type Coord struct {
-	x int
-	y int
-}
-
 type Grid [][]string
 
 type Region struct {
@@ -93,10 +90,10 @@ type Region struct {
 }
 
 func (g Grid) draw() {
-	g.drawWithMarkers(map[Coord]string{})
+	g.drawWithMarkers(map[shared.Coord]string{})
 }
 
-func (g Grid) drawWithMarkers(markers map[Coord]string) {
+func (g Grid) drawWithMarkers(markers map[shared.Coord]string) {
 	yMin, yMax := g.height()-1, 0
 	xMin, xMax := g.width()-1, 0
 
@@ -118,7 +115,7 @@ func (g Grid) drawWithMarkers(markers map[Coord]string) {
 
 	for y := yMin - borderThickness - bufferThickness; y <= yMax+borderThickness+bufferThickness; y++ {
 		for x := xMin - borderThickness - bufferThickness; x <= xMax+borderThickness+bufferThickness; x++ {
-			loc := Coord{x, y}
+			loc := shared.Coord{x, y}
 
 			// print the border
 			if x >= xMin-borderThickness-bufferThickness && x < xMin-bufferThickness ||
@@ -207,18 +204,18 @@ func (g Grid) measure() (int, int) {
 	perimeter := 0
 
 	visited := makeGrid(g.width(), g.height())
-	toVisit := []Coord{g.firstCell("x")}
+	toVisit := []shared.Coord{g.firstCell("x")}
 
 	for i := 0; i < len(toVisit); i++ {
 		loc := toVisit[i]
 
-		if visited[loc.y][loc.x] == "x" {
+		if visited[loc.Y][loc.X] == "x" {
 			continue
 		}
 
 		neighbors := g.neighborCoords(loc)
 
-		visited[loc.y][loc.x] = "x"
+		visited[loc.Y][loc.X] = "x"
 		toVisit = append(toVisit, neighbors...)
 
 		area += 1
@@ -228,18 +225,18 @@ func (g Grid) measure() (int, int) {
 	return area, perimeter
 }
 
-func (g Grid) firstCell(value string) Coord {
+func (g Grid) firstCell(value string) shared.Coord {
 
 	for y, row := range g {
 		for x := range row {
 			if g[y][x] == value {
 
-				return Coord{x: x, y: y}
+				return shared.Coord{X: x, Y: y}
 			}
 		}
 	}
 
-	return Coord{x: -1, y: -1}
+	return shared.Coord{X: -1, Y: -1}
 }
 
 func (g Grid) regions() []Region {
@@ -249,7 +246,7 @@ func (g Grid) regions() []Region {
 
 	for _, flood := range floods {
 		plantTypeCoord := flood.firstCell("x")
-		plantType := g[plantTypeCoord.y][plantTypeCoord.x]
+		plantType := g[plantTypeCoord.Y][plantTypeCoord.X]
 
 		regions = append(regions, Region{plantType: plantType, grid: flood})
 	}
@@ -268,7 +265,7 @@ func (g Grid) floods() []Grid {
 				continue
 			}
 
-			flood := g.flood(Coord{x: x, y: y})
+			flood := g.flood(shared.Coord{X: x, Y: y})
 
 			area, _ := flood.measure()
 			if area > 0 {
@@ -288,15 +285,15 @@ func (g Grid) floods() []Grid {
 	return floods
 }
 
-func (g Grid) neighborCoords(loc Coord) []Coord {
-	neighbors := []Coord{}
-	value := g[loc.y][loc.x]
+func (g Grid) neighborCoords(loc shared.Coord) []shared.Coord {
+	neighbors := []shared.Coord{}
+	value := g[loc.Y][loc.X]
 
-	offsets := []Coord{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
+	offsets := []shared.Coord{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
 
 	for _, offset := range offsets {
-		candidate := Coord{x: loc.x + offset.x, y: loc.y + offset.y}
-		if g.isInGrid(candidate) && g[candidate.y][candidate.x] == value {
+		candidate := shared.Coord{X: loc.X + offset.X, Y: loc.Y + offset.Y}
+		if g.isInGrid(candidate) && g[candidate.Y][candidate.X] == value {
 			neighbors = append(neighbors, candidate)
 		}
 	}
@@ -304,19 +301,19 @@ func (g Grid) neighborCoords(loc Coord) []Coord {
 	return neighbors
 }
 
-func (g Grid) isInGrid(l Coord) bool {
-	return l.x >= 0 &&
-		l.x < len(g[0]) &&
-		l.y >= 0 &&
-		l.y < len(g)
+func (g Grid) isInGrid(l shared.Coord) bool {
+	return l.X >= 0 &&
+		l.X < len(g[0]) &&
+		l.Y >= 0 &&
+		l.Y < len(g)
 }
 
-func (g Grid) flood(loc Coord) Grid {
+func (g Grid) flood(loc shared.Coord) Grid {
 
-	plantType := g[loc.y][loc.x]
+	plantType := g[loc.Y][loc.X]
 
 	regionGrid := makeGrid(g.width(), g.height())
-	toVisit := []Coord{loc}
+	toVisit := []shared.Coord{loc}
 
 	for {
 		newVisits := false
@@ -325,18 +322,18 @@ func (g Grid) flood(loc Coord) Grid {
 			start := toVisit[i]
 
 			// skipping because we've been here
-			if regionGrid[start.y][start.x] == "x" {
+			if regionGrid[start.Y][start.X] == "x" {
 				continue
 			}
 
 			// skipping because this is another region
-			if g[start.y][start.x] != plantType {
+			if g[start.Y][start.X] != plantType {
 				continue
 			}
 
 			// mark this as part of the region and let the loop continue
 			// one more time
-			regionGrid[start.y][start.x] = "x"
+			regionGrid[start.Y][start.X] = "x"
 			newVisits = true
 
 			// try visiting neighbors
@@ -390,13 +387,13 @@ func (g Grid) dumbRunCount() int {
 			upper := ""
 			lower := ""
 
-			if g.isInGrid(Coord{x: x, y: y - 1}) {
+			if g.isInGrid(shared.Coord{X: x, Y: y - 1}) {
 				upper = g[y-1][x]
 			} else {
 				upper = "."
 			}
 
-			if g.isInGrid(Coord{x: x, y: y}) {
+			if g.isInGrid(shared.Coord{X: x, Y: y}) {
 				lower = g[y][x]
 			} else {
 				lower = "."

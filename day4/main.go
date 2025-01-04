@@ -6,6 +6,8 @@ import (
 	"math"
 	"os"
 	"strings"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -97,7 +99,7 @@ func isMatch(matchPattern [][]string, charSlice [][]string) bool {
 
 // returns the number of times the matchString appears in the charSlice
 // when following run coordinates
-func getMatchesInRuns(matchString string, charSlice [][]string, runs [][]coordinates) int {
+func getMatchesInRuns(matchString string, charSlice [][]string, runs [][]shared.Coord) int {
 	matchCount := 0
 
 	matchStringReversed := reverseString(matchString)
@@ -106,7 +108,7 @@ func getMatchesInRuns(matchString string, charSlice [][]string, runs [][]coordin
 		stringBuffer := strings.Repeat(" ", len(matchString))
 
 		for _, coord := range run {
-			stringBuffer = stringBuffer[1:] + charSlice[coord.y][coord.x]
+			stringBuffer = stringBuffer[1:] + charSlice[coord.Y][coord.X]
 
 			if stringBuffer == matchString || stringBuffer == matchStringReversed {
 				matchCount++
@@ -119,17 +121,17 @@ func getMatchesInRuns(matchString string, charSlice [][]string, runs [][]coordin
 
 // creates a lists of coordinates that represent lines of characters going
 // from the top right to the bottom left
-func runsSouthWest(rows int, cols int, minLength int) [][]coordinates {
-	var result [][]coordinates
+func runsSouthWest(rows int, cols int, minLength int) [][]shared.Coord {
+	var result [][]shared.Coord
 
 	for i := minLength - 1; i < rows+cols-minLength; i++ {
-		currentRun := []coordinates{}
+		currentRun := []shared.Coord{}
 
 		skipAhead := int(math.Max(0, float64(i-rows+1)))
 
 		x := i - skipAhead
 		for y := skipAhead; y < rows; y++ {
-			currentRun = append(currentRun, coordinates{x: x, y: y})
+			currentRun = append(currentRun, shared.Coord{X: x, Y: y})
 			x--
 
 			if x < 0 {
@@ -145,17 +147,17 @@ func runsSouthWest(rows int, cols int, minLength int) [][]coordinates {
 
 // creates a lists of coordinates that represent lines of characters going
 // from the top left to the bottom right
-func runsSouthEast(rows int, cols int, minLength int) [][]coordinates {
-	var result [][]coordinates
+func runsSouthEast(rows int, cols int, minLength int) [][]shared.Coord {
+	var result [][]shared.Coord
 
 	for i := minLength - rows; i < cols-minLength+1; i++ {
-		currentRun := []coordinates{}
+		currentRun := []shared.Coord{}
 
 		skipAhead := int(math.Max(0, float64(-i)))
 
 		x := i + skipAhead
 		for y := skipAhead; y < rows; y++ {
-			currentRun = append(currentRun, coordinates{x: x, y: y})
+			currentRun = append(currentRun, shared.Coord{X: x, Y: y})
 			x++
 
 			if x >= cols {
@@ -171,14 +173,14 @@ func runsSouthEast(rows int, cols int, minLength int) [][]coordinates {
 
 // creates a lists of coordinates that represent lines of characters going
 // from the left to the right
-func runsEast(rows int, cols int) [][]coordinates {
-	var result [][]coordinates
+func runsEast(rows int, cols int) [][]shared.Coord {
+	var result [][]shared.Coord
 
 	for y := 0; y < cols; y++ {
-		currentRun := []coordinates{}
+		currentRun := []shared.Coord{}
 
 		for x := 0; x < rows; x++ {
-			currentRun = append(currentRun, coordinates{x: x, y: y})
+			currentRun = append(currentRun, shared.Coord{X: x, Y: y})
 		}
 
 		result = append(result, currentRun)
@@ -189,14 +191,14 @@ func runsEast(rows int, cols int) [][]coordinates {
 
 // creates a lists of coordinates that represent lines of characters going
 // from the top to the bottom
-func runsSouth(rows int, cols int) [][]coordinates {
-	var result [][]coordinates
+func runsSouth(rows int, cols int) [][]shared.Coord {
+	var result [][]shared.Coord
 
 	for x := 0; x < cols; x++ {
-		currentRun := []coordinates{}
+		currentRun := []shared.Coord{}
 
 		for y := 0; y < rows; y++ {
-			currentRun = append(currentRun, coordinates{x: x, y: y})
+			currentRun = append(currentRun, shared.Coord{X: x, Y: y})
 		}
 
 		result = append(result, currentRun)
@@ -241,9 +243,4 @@ func reverseString(input string) string {
 	}
 
 	return chars
-}
-
-type coordinates struct {
-	x int
-	y int
 }

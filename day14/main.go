@@ -6,6 +6,8 @@ import (
 	"compress/gzip"
 	"fmt"
 	"os"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -17,8 +19,8 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	gridSize := XY{101, 103}
-	center := XY{x: (gridSize.x - 1) / 2, y: (gridSize.y - 1) / 2}
+	gridSize := shared.Coord{101, 103}
+	center := shared.Coord{X: (gridSize.X - 1) / 2, Y: (gridSize.Y - 1) / 2}
 
 	// part 1
 	robots := readInput(fileName)
@@ -28,11 +30,11 @@ func main() {
 	for i := range robots {
 		robots[i].move(100, gridSize)
 
-		if robots[i].pos.x == center.x || robots[i].pos.y == center.y {
+		if robots[i].pos.X == center.X || robots[i].pos.Y == center.Y {
 			continue
 		}
 
-		quads[robots[i].pos.x < center.x][robots[i].pos.y < center.y]++
+		quads[robots[i].pos.X < center.X][robots[i].pos.Y < center.Y]++
 	}
 
 	safetyScore := quads[false][false] * quads[false][true] * quads[true][false] * quads[true][true]
@@ -52,8 +54,8 @@ func main() {
 		if len < minLength {
 			fmt.Printf("Time: %d, Length: %d\n", i, len)
 
-			for y := 0; y < gridSize.y; y++ {
-				for x := 0; x < gridSize.x; x++ {
+			for y := 0; y < gridSize.Y; y++ {
+				for x := 0; x < gridSize.X; x++ {
 					if grid[y][x] {
 						fmt.Print("⬛")
 					} else {
@@ -85,52 +87,47 @@ func readInput(filePath string) []Robot {
 
 		pX, pY, vX, vY := 0, 0, 0, 0
 		fmt.Sscanf(line, "p=%d,%d v=%d,%d", &pX, &pY, &vX, &vY)
-		robots = append(robots, Robot{pos: XY{pX, pY}, vel: XY{vX, vY}})
+		robots = append(robots, Robot{pos: shared.Coord{pX, pY}, vel: shared.Coord{vX, vY}})
 	}
 
 	return robots
 }
 
-type XY struct {
-	x int
-	y int
-}
-
 type Robot struct {
-	pos XY
-	vel XY
+	pos shared.Coord
+	vel shared.Coord
 }
 
-func (r *Robot) move(seconds int, gridSize XY) {
-	(*r).pos.x += (*r).vel.x * seconds
-	(*r).pos.y += (*r).vel.y * seconds
+func (r *Robot) move(seconds int, gridSize shared.Coord) {
+	(*r).pos.X += (*r).vel.X * seconds
+	(*r).pos.Y += (*r).vel.Y * seconds
 
-	(*r).pos.x = (*r).pos.x % gridSize.x
-	(*r).pos.y = (*r).pos.y % gridSize.y
+	(*r).pos.X = (*r).pos.X % gridSize.X
+	(*r).pos.Y = (*r).pos.Y % gridSize.Y
 
-	if (*r).pos.x < 0 {
-		(*r).pos.x += gridSize.x
+	if (*r).pos.X < 0 {
+		(*r).pos.X += gridSize.X
 	}
 
-	if (*r).pos.y < 0 {
-		(*r).pos.y += gridSize.y
+	if (*r).pos.Y < 0 {
+		(*r).pos.Y += gridSize.Y
 	}
 }
 
-func plot(r []Robot, gridSize XY) (int, [][]bool) {
+func plot(r []Robot, gridSize shared.Coord) (int, [][]bool) {
 	output := ""
-	grid := make([][]bool, gridSize.y)
+	grid := make([][]bool, gridSize.Y)
 
-	for y := 0; y < gridSize.y; y++ {
-		grid[y] = make([]bool, gridSize.x)
+	for y := 0; y < gridSize.Y; y++ {
+		grid[y] = make([]bool, gridSize.X)
 	}
 
 	for _, robot := range r {
-		grid[robot.pos.y][robot.pos.x] = true
+		grid[robot.pos.Y][robot.pos.X] = true
 	}
 
-	for y := 0; y < gridSize.y; y++ {
-		for x := 0; x < gridSize.x; x++ {
+	for y := 0; y < gridSize.Y; y++ {
+		for x := 0; x < gridSize.X; x++ {
 			if grid[y][x] {
 				output += "#"
 			} else {

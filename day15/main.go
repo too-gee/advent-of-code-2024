@@ -8,6 +8,8 @@ import (
 	"slices"
 	"sort"
 	"strings"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -127,11 +129,6 @@ const RIGHT = ">"
 const DOWN = "v"
 const LEFT = "<"
 
-type Coord struct {
-	x int
-	y int
-}
-
 type Grid [][]string
 
 type Warehouse struct {
@@ -201,11 +198,11 @@ func (w *Warehouse) draw() {
 	(*w).grid.draw(w.wide)
 }
 
-func (g Grid) isInGrid(l Coord) bool {
-	return l.x >= 0 &&
-		l.x < g.width() &&
-		l.y >= 0 &&
-		l.y < g.height()
+func (g Grid) isInGrid(l shared.Coord) bool {
+	return l.X >= 0 &&
+		l.X < g.width() &&
+		l.Y >= 0 &&
+		l.Y < g.height()
 }
 
 func (g Grid) width() int {
@@ -236,18 +233,18 @@ func (g *Grid) rotate(dir int) {
 	*g = result
 }
 
-func (g Grid) find(value string) Coord {
+func (g Grid) find(value string) shared.Coord {
 
 	for y, row := range g {
 		for x := range row {
 			if g[y][x] == value {
 
-				return Coord{x: x, y: y}
+				return shared.Coord{X: x, Y: y}
 			}
 		}
 	}
 
-	return Coord{x: -1, y: -1}
+	return shared.Coord{X: -1, Y: -1}
 }
 
 func (g Grid) drawNormal() {
@@ -288,7 +285,7 @@ func (g Grid) draw(wide bool) {
 
 	for y := yMin - borderThickness - bufferThickness; y <= yMax+borderThickness+bufferThickness; y++ {
 		for x := xMin - ((borderThickness + bufferThickness) * xIncr); x <= xMax+((borderThickness+bufferThickness)*xIncr); x += xIncr {
-			loc := Coord{x, y}
+			loc := shared.Coord{x, y}
 
 			// print the border
 			if x >= xMin-((borderThickness+bufferThickness)*xIncr) && x < xMin-(bufferThickness*xIncr) ||
@@ -368,11 +365,11 @@ func (w *Warehouse) moveRobot(move string) {
 	var start int
 
 	if move == LEFT || move == DOWN {
-		tmp = reversed(w.grid[robot.y])
-		start = w.grid.width() - robot.x - 1
+		tmp = reversed(w.grid[robot.Y])
+		start = w.grid.width() - robot.X - 1
 	} else {
-		tmp = w.grid[robot.y]
-		start = robot.x
+		tmp = w.grid[robot.Y]
+		start = robot.X
 	}
 
 	space := float64(slices.Index(tmp[start:], EMPTY))
@@ -402,29 +399,29 @@ func (w *Warehouse) moveRobot(move string) {
 	}
 
 	for x := start; x < end; x++ {
-		(*w).grid[robot.y][x] = newRow[x-start]
+		(*w).grid[robot.Y][x] = newRow[x-start]
 	}
 }
 
-func (w Warehouse) canMove(currentLoc Coord, move string) []Coord {
-	var moveAmt Coord
+func (w Warehouse) canMove(currentLoc shared.Coord, move string) []shared.Coord {
+	var moveAmt shared.Coord
 
 	switch move {
 	case LEFT:
-		moveAmt = Coord{x: -1, y: 0}
+		moveAmt = shared.Coord{X: -1, Y: 0}
 	case RIGHT:
-		moveAmt = Coord{x: 1, y: 0}
+		moveAmt = shared.Coord{X: 1, Y: 0}
 	case UP:
-		moveAmt = Coord{x: 0, y: -1}
+		moveAmt = shared.Coord{X: 0, Y: -1}
 	case DOWN:
-		moveAmt = Coord{x: 0, y: 1}
+		moveAmt = shared.Coord{X: 0, Y: 1}
 	}
 
-	movers := []Coord{}
-	nextLoc := Coord{x: currentLoc.x + moveAmt.x, y: currentLoc.y + moveAmt.y}
+	movers := []shared.Coord{}
+	nextLoc := shared.Coord{X: currentLoc.X + moveAmt.X, Y: currentLoc.Y + moveAmt.Y}
 
 	// If we're moving left or right, pretend the split boxes are just normal boxes
-	nextLocStr := w.grid[nextLoc.y][nextLoc.x]
+	nextLocStr := w.grid[nextLoc.Y][nextLoc.X]
 	if (move == LEFT || move == RIGHT) && (nextLocStr == "[" || nextLocStr == "]") {
 		nextLocStr = "O"
 	}
@@ -432,7 +429,7 @@ func (w Warehouse) canMove(currentLoc Coord, move string) []Coord {
 	switch nextLocStr {
 	// Empty space, can move
 	case ".":
-		return []Coord{currentLoc}
+		return []shared.Coord{currentLoc}
 	// Just a wall, must stop
 	case "#":
 		return nil
@@ -442,7 +439,7 @@ func (w Warehouse) canMove(currentLoc Coord, move string) []Coord {
 		if len(newMovers) == 0 {
 			return nil
 		}
-		movers = []Coord{currentLoc}
+		movers = []shared.Coord{currentLoc}
 		movers = append(movers, newMovers...)
 	// Double width box, check both spaces
 	case "[":
@@ -450,10 +447,10 @@ func (w Warehouse) canMove(currentLoc Coord, move string) []Coord {
 		if len(newMovers) == 0 {
 			return nil
 		}
-		movers = []Coord{currentLoc}
+		movers = []shared.Coord{currentLoc}
 		movers = append(movers, newMovers...)
 
-		rightNextLoc := Coord{x: nextLoc.x + 1, y: nextLoc.y}
+		rightNextLoc := shared.Coord{X: nextLoc.X + 1, Y: nextLoc.Y}
 		newMovers = w.canMove(rightNextLoc, move)
 		if len(newMovers) == 0 {
 			return nil
@@ -464,10 +461,10 @@ func (w Warehouse) canMove(currentLoc Coord, move string) []Coord {
 		if len(newMovers) == 0 {
 			return nil
 		}
-		movers = []Coord{currentLoc}
+		movers = []shared.Coord{currentLoc}
 		movers = append(movers, newMovers...)
 
-		leftNextLoc := Coord{x: nextLoc.x - 1, y: nextLoc.y}
+		leftNextLoc := shared.Coord{X: nextLoc.X - 1, Y: nextLoc.Y}
 		newMovers = w.canMove(leftNextLoc, move)
 		if len(newMovers) == 0 {
 			return nil
@@ -477,10 +474,10 @@ func (w Warehouse) canMove(currentLoc Coord, move string) []Coord {
 
 	// sort by y then x
 	sort.Slice(movers, func(i, j int) bool {
-		if movers[i].y == movers[j].y {
-			return movers[i].x < movers[j].x
+		if movers[i].Y == movers[j].Y {
+			return movers[i].X < movers[j].X
 		} else {
-			return movers[i].y < movers[j].y
+			return movers[i].Y < movers[j].Y
 		}
 	})
 
@@ -503,24 +500,24 @@ func (w *Warehouse) wideMoveRobot(move string) {
 	movers := w.canMove(robot, move)
 
 	if len(movers) > 0 {
-		var moveAmt Coord
+		var moveAmt shared.Coord
 
 		switch move {
 		case LEFT:
-			moveAmt = Coord{x: -1, y: 0}
+			moveAmt = shared.Coord{X: -1, Y: 0}
 		case RIGHT:
-			moveAmt = Coord{x: 1, y: 0}
+			moveAmt = shared.Coord{X: 1, Y: 0}
 		case UP:
-			moveAmt = Coord{x: 0, y: -1}
+			moveAmt = shared.Coord{X: 0, Y: -1}
 		case DOWN:
-			moveAmt = Coord{x: 0, y: 1}
+			moveAmt = shared.Coord{X: 0, Y: 1}
 		}
 
 		for _, a := range movers {
-			b := Coord{x: a.x + moveAmt.x, y: a.y + moveAmt.y}
+			b := shared.Coord{X: a.X + moveAmt.X, Y: a.Y + moveAmt.Y}
 
-			(*w).grid[b.y][b.x] = (*w).grid[a.y][a.x]
-			(*w).grid[a.y][a.x] = "."
+			(*w).grid[b.Y][b.X] = (*w).grid[a.Y][a.X]
+			(*w).grid[a.Y][a.X] = "."
 		}
 	}
 }

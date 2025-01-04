@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math"
 	"os"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -23,8 +25,8 @@ func main() {
 
 	for i, clawMachine := range clawMachines {
 		for aPresses := 0; aPresses <= 100; aPresses++ {
-			xRem := float64(clawMachine.prize.x-(clawMachine.buttonA.x*aPresses)) / float64(clawMachine.buttonB.x)
-			yRem := float64(clawMachine.prize.y-(clawMachine.buttonA.y*aPresses)) / float64(clawMachine.buttonB.y)
+			xRem := float64(clawMachine.prize.X-(clawMachine.buttonA.X*aPresses)) / float64(clawMachine.buttonB.X)
+			yRem := float64(clawMachine.prize.Y-(clawMachine.buttonA.Y*aPresses)) / float64(clawMachine.buttonB.Y)
 
 			if xRem != yRem || xRem != math.Trunc(xRem) {
 				continue
@@ -48,25 +50,25 @@ func main() {
 	totalCost = 0
 
 	for i, clawMachine := range clawMachines {
-		clawMachine.prize.x += 10000000000000
-		clawMachine.prize.y += 10000000000000
+		clawMachine.prize.X += 10000000000000
+		clawMachine.prize.Y += 10000000000000
 
 		// C, D → Prize
-		C := float64(clawMachine.prize.x)
-		D := float64(clawMachine.prize.y)
+		C := float64(clawMachine.prize.X)
+		D := float64(clawMachine.prize.Y)
 
 		// y = Kx + J → Button A (except we assume we're starting at 0,0)
 		// y = Px + Q → Button B
-		K := float64(clawMachine.buttonA.y) / float64(clawMachine.buttonA.x)
+		K := float64(clawMachine.buttonA.Y) / float64(clawMachine.buttonA.X)
 
-		P := float64(clawMachine.buttonB.y) / float64(clawMachine.buttonB.x)
+		P := float64(clawMachine.buttonB.Y) / float64(clawMachine.buttonB.X)
 		Q := D - (P * C)
 
 		// intersection
 		x := Q / (K - P)
 
-		aPresses := int(math.Round(x / float64(clawMachine.buttonA.x)))
-		bPresses := int(math.Round((C - x) / float64(clawMachine.buttonB.x)))
+		aPresses := int(math.Round(x / float64(clawMachine.buttonA.X)))
+		bPresses := int(math.Round((C - x) / float64(clawMachine.buttonB.X)))
 
 		cost, win := clawMachine.play(aPresses, bPresses)
 
@@ -100,43 +102,38 @@ func readInput(filePath string) []ClawMachine {
 		i, err := fmt.Sscanf(line, "Prize: X=%d, Y=%d", &prizeX, &prizeY)
 
 		if err == nil && i == 2 {
-			clawMachines = append(clawMachines, ClawMachine{buttonA: XY{buttonAx, buttonAy}, buttonB: XY{buttonBx, buttonBy}, prize: XY{prizeX, prizeY}})
+			clawMachines = append(clawMachines, ClawMachine{buttonA: shared.Coord{buttonAx, buttonAy}, buttonB: shared.Coord{buttonBx, buttonBy}, prize: shared.Coord{prizeX, prizeY}})
 		}
 	}
 
 	return clawMachines
 }
 
-type XY struct {
-	x int
-	y int
-}
-
 type ClawMachine struct {
-	buttonA XY
-	buttonB XY
-	prize   XY
+	buttonA shared.Coord
+	buttonB shared.Coord
+	prize   shared.Coord
 }
 
 func (c ClawMachine) play(aPresses int, bPresses int) (int, bool) {
-	position := XY{0, 0}
+	position := shared.Coord{0, 0}
 	cost := 0
 
-	position.x += aPresses * c.buttonA.x
-	position.y += aPresses * c.buttonA.y
+	position.X += aPresses * c.buttonA.X
+	position.Y += aPresses * c.buttonA.Y
 	cost += aPresses * 3
 
-	position.x += bPresses * c.buttonB.x
-	position.y += bPresses * c.buttonB.y
+	position.X += bPresses * c.buttonB.X
+	position.Y += bPresses * c.buttonB.Y
 	cost += bPresses * 1
 
 	return cost, position == c.prize
 }
 
 func (c ClawMachine) maxIters() int {
-	maxDimension := math.Max(float64(c.prize.x), float64(c.prize.y))
-	minIncrementX := math.Min(float64(c.buttonA.x), float64(c.buttonB.x))
-	minIncrementY := math.Min(float64(c.buttonB.y), float64(c.buttonB.y))
+	maxDimension := math.Max(float64(c.prize.X), float64(c.prize.Y))
+	minIncrementX := math.Min(float64(c.buttonA.X), float64(c.buttonB.X))
+	minIncrementY := math.Min(float64(c.buttonB.Y), float64(c.buttonB.Y))
 	minIncrement := math.Min(minIncrementX, minIncrementY)
 
 	return int(math.Trunc(maxDimension/minIncrement) + 1)

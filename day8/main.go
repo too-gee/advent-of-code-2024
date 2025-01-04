@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -31,7 +33,7 @@ func main() {
 		for y, row := range grid {
 			for x, cell := range row {
 				if cell == frequency {
-					antennaLocations[frequency] = append(antennaLocations[frequency], coord{x: x, y: y})
+					antennaLocations[frequency] = append(antennaLocations[frequency], shared.Coord{X: x, Y: y})
 				}
 			}
 		}
@@ -44,7 +46,7 @@ func main() {
 			antennaA := antennas[pair[0]]
 			antennaB := antennas[pair[1]]
 
-			antinode := coord{x: (2 * antennaA.x) - antennaB.x, y: (2 * antennaA.y) - antennaB.y}
+			antinode := shared.Coord{X: (2 * antennaA.X) - antennaB.X, Y: (2 * antennaA.Y) - antennaB.Y}
 
 			if isInGrid(antinode, grid) && !slices.Contains(antiNodeLocations, antinode) {
 				antiNodeLocations = append(antiNodeLocations, antinode)
@@ -66,13 +68,13 @@ func main() {
 				antiNodeLocations = append(antiNodeLocations, antennaA)
 			}
 
-			rise := antennaA.y - antennaB.y
-			run := antennaA.x - antennaB.x
-			currentX := antennaA.x
-			currentY := antennaA.y
+			rise := antennaA.Y - antennaB.Y
+			run := antennaA.X - antennaB.X
+			currentX := antennaA.X
+			currentY := antennaA.Y
 
 			for {
-				antinode := coord{x: currentX + run, y: currentY + rise}
+				antinode := shared.Coord{X: currentX + run, Y: currentY + rise}
 
 				if !isInGrid(antinode, grid) {
 					break
@@ -166,16 +168,11 @@ func makeRange(min, max int) []int {
 	return a
 }
 
-func isInGrid(l coord, grid [][]string) bool {
-	if l.x >= 0 && l.x < len(grid) && l.y >= 0 && l.y < len(grid[0]) {
+func isInGrid(l shared.Coord, grid [][]string) bool {
+	if l.X >= 0 && l.X < len(grid) && l.Y >= 0 && l.Y < len(grid[0]) {
 		return true
 	}
 	return false
 }
 
-type coord struct {
-	x int
-	y int
-}
-
-type coordList []coord
+type coordList []shared.Coord
