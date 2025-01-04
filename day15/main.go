@@ -285,7 +285,7 @@ func (g Grid) draw(wide bool) {
 
 	for y := yMin - borderThickness - bufferThickness; y <= yMax+borderThickness+bufferThickness; y++ {
 		for x := xMin - ((borderThickness + bufferThickness) * xIncr); x <= xMax+((borderThickness+bufferThickness)*xIncr); x += xIncr {
-			loc := shared.Coord{x, y}
+			loc := shared.Coord{X: x, Y: y}
 
 			// print the border
 			if x >= xMin-((borderThickness+bufferThickness)*xIncr) && x < xMin-(bufferThickness*xIncr) ||
