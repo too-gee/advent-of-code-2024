@@ -19,7 +19,7 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	gridSize := shared.Coord{101, 103}
+	gridSize := shared.Coord{X: 101, Y: 103}
 	center := shared.Coord{X: (gridSize.X - 1) / 2, Y: (gridSize.Y - 1) / 2}
 
 	// part 1
@@ -87,7 +87,7 @@ func readInput(filePath string) []Robot {
 
 		pX, pY, vX, vY := 0, 0, 0, 0
 		fmt.Sscanf(line, "p=%d,%d v=%d,%d", &pX, &pY, &vX, &vY)
-		robots = append(robots, Robot{pos: shared.Coord{pX, pY}, vel: shared.Coord{vX, vY}})
+		robots = append(robots, Robot{pos: shared.Coord{X: pX, Y: pY}, vel: shared.Coord{X: vX, Y: vY}})
 	}
 
 	return robots
