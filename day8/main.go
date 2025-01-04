@@ -46,7 +46,7 @@ func main() {
 
 			antinode := coord{x: (2 * antennaA.x) - antennaB.x, y: (2 * antennaA.y) - antennaB.y}
 
-			if isInGrid(antinode, grid) && !antiNodeLocations.contains(antinode) {
+			if isInGrid(antinode, grid) && !slices.Contains(antiNodeLocations, antinode) {
 				antiNodeLocations = append(antiNodeLocations, antinode)
 			}
 		}
@@ -62,7 +62,7 @@ func main() {
 			antennaA := antennas[pair[0]]
 			antennaB := antennas[pair[1]]
 
-			if !antiNodeLocations.contains(antennaA) {
+			if !slices.Contains(antiNodeLocations, antennaA) {
 				antiNodeLocations = append(antiNodeLocations, antennaA)
 			}
 
@@ -78,7 +78,7 @@ func main() {
 					break
 				}
 
-				if !antiNodeLocations.contains(antinode) {
+				if !slices.Contains(antiNodeLocations, antinode) {
 					antiNodeLocations = append(antiNodeLocations, antinode)
 				}
 
@@ -179,12 +179,3 @@ type coord struct {
 }
 
 type coordList []coord
-
-func (c coordList) contains(l coord) bool {
-	for _, v := range c {
-		if v == l {
-			return true
-		}
-	}
-	return false
-}
