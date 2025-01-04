@@ -20,12 +20,20 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	// part 1
 	maze := readInput(fileName).fillDeadEnds()
+	maze.draw(map[string][]shared.Coord{})
 
-	//maze.draw(map[string][]shared.Coord{})
+	// part 1
 	cost := PartOne(maze)
 	fmt.Printf("Lowest cost: %d\n", cost)
+
+	// part 2
+	optimalPathCount := PartTwo(maze)
+	fmt.Printf("Optimal path count: %d\n", optimalPathCount)
+}
+
+func PartTwo(g Grid) int {
+	return 0
 }
 
 func readInput(filePath string) Grid {
