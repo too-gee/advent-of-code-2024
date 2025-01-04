@@ -23,8 +23,8 @@ func main() {
 	// part 1
 	maze := readInput(fileName).fillDeadEnds()
 
-	maze.draw(map[string][]shared.Coord{})
-	cost := maze.solve(maze.find(START), maze.find(END))
+	//maze.draw(map[string][]shared.Coord{})
+	cost := PartOne(maze)
 	fmt.Printf("Lowest cost: %d\n", cost)
 }
 
@@ -137,7 +137,10 @@ func (q *PriorityQueue) Pop() interface{} {
 
 type Grid [][]string
 
-func (g Grid) solve(start, end shared.Coord) int {
+func PartOne(g Grid) int {
+	start := g.find(START)
+	end := g.find(END)
+
 	queue := PriorityQueue{}
 	heap.Init(&queue)
 	heap.Push(&queue, &State{
