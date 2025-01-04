@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -51,8 +52,8 @@ func main() {
 
 			// if we fail a rule, swap the numbers around
 			if !ruleIsFollowed(rule, update) {
-				firstIndex := indexOf(update, rule[0])
-				secondIndex := indexOf(update, rule[1])
+				firstIndex := slices.Index(update, rule[0])
+				secondIndex := slices.Index(update, rule[1])
 
 				tmp := update[firstIndex]
 				update[firstIndex] = update[secondIndex]
@@ -79,8 +80,8 @@ func updateIsCorrect(update []int, rules [][]int) bool {
 }
 
 func ruleIsFollowed(rule []int, update []int) bool {
-	firstIndex := indexOf(update, rule[0])
-	secondIndex := indexOf(update, rule[1])
+	firstIndex := slices.Index(update, rule[0])
+	secondIndex := slices.Index(update, rule[1])
 
 	if firstIndex == -1 || secondIndex == -1 {
 		return true
@@ -140,13 +141,4 @@ func readInput(filePath string) ([][]int, [][]int) {
 	}
 
 	return rules, updates
-}
-
-func indexOf(slice []int, value int) int {
-	for i, v := range slice {
-		if v == value {
-			return i
-		}
-	}
-	return -1
 }
