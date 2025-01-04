@@ -22,18 +22,28 @@ func main() {
 	list1, list2 := readInput(fileName)
 
 	// part 1
-	differences := 0
+	difference := PartOne(list1, list2)
+	fmt.Printf("The total difference is %d\n", difference)
+
+	// part 2
+	similarity := PartTwo(list1, list2)
+	fmt.Printf("The similarity score is %d\n", similarity)
+}
+
+func PartOne(list1 []int, list2 []int) int {
+	difference := 0
 
 	sort.Ints(list1)
 	sort.Ints(list2)
 
 	for i := range list1 {
-		differences += int(math.Abs(float64(list1[i] - list2[i])))
+		difference += int(math.Abs(float64(list1[i] - list2[i])))
 	}
 
-	fmt.Printf("The total difference is %d\n", differences)
+	return difference
+}
 
-	// part 2
+func PartTwo(list1 []int, list2 []int) int {
 	similarity := 0
 
 	for _, needle := range list1 {
@@ -44,7 +54,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("The similarity score is %d\n", similarity)
+	return similarity
 }
 
 func readInput(filePath string) ([]int, []int) {

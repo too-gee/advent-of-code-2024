@@ -22,6 +22,16 @@ func main() {
 	stones := readInput(fileName)
 
 	// part 1
+	stoneCount := PartOne(stones)
+	fmt.Printf("Stone count: %d\n", stoneCount)
+
+	// part 2
+	stoneCount = PartTwo(stones)
+	fmt.Printf("Stone count after a while: %d\n", stoneCount)
+}
+
+func PartOne(input Stones) int {
+	stones := input.copy()
 	maxBlinks := 25
 
 	for blink := 1; blink <= maxBlinks; blink++ {
@@ -48,15 +58,19 @@ func main() {
 		fmt.Printf("Stone count after %d blinks: %d\n", blink, len(stones))
 	}
 
-	// part 2
-	stones = readInput(fileName)
+	return len(stones)
+}
+
+func PartTwo(input Stones) int {
+	stones := input.copy()
+	maxBlinks := 75
+
 	metaStones := changeSet{}
 
 	for _, stone := range stones {
 		metaStones.add(stone, 1)
 	}
 
-	maxBlinks = 75
 	for blink := 1; blink <= maxBlinks; blink++ {
 		blinkChanges := changeSet{}
 
@@ -84,6 +98,8 @@ func main() {
 
 		fmt.Printf("Stone count after %d optimized blinks: %d\n", blink, metaStones.count())
 	}
+
+	return metaStones.count()
 }
 
 func readInput(filePath string) []int {
@@ -112,6 +128,14 @@ func readInput(filePath string) []int {
 	}
 
 	return stones
+}
+
+type Stones []int
+
+func (s Stones) copy() []int {
+	newStones := make([]int, len(s))
+	copy(newStones, s)
+	return newStones
 }
 
 func digits(num int) int {

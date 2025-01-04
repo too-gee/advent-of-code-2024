@@ -20,10 +20,20 @@ func main() {
 	}
 
 	gridSize := shared.Coord{X: 101, Y: 103}
-	center := shared.Coord{X: (gridSize.X - 1) / 2, Y: (gridSize.Y - 1) / 2}
+	robots := readInput(fileName)
 
 	// part 1
-	robots := readInput(fileName)
+	safetyScore := PartOne(robots, gridSize)
+	fmt.Printf("The total safety score is %d\n", safetyScore)
+
+	// part 2
+	timeToTree := PartTwo(robots, gridSize)
+	fmt.Printf("Time to tree: %d\n", timeToTree)
+}
+
+func PartOne(input []Robot, gridSize shared.Coord) int {
+	robots := copyRobots(input)
+	center := shared.Coord{X: (gridSize.X - 1) / 2, Y: (gridSize.Y - 1) / 2}
 
 	quads := map[bool]map[bool]int{false: {false: 0, true: 0}, true: {false: 0, true: 0}}
 
@@ -38,12 +48,15 @@ func main() {
 	}
 
 	safetyScore := quads[false][false] * quads[false][true] * quads[true][false] * quads[true][true]
-	fmt.Printf("The total safety score is %d\n", safetyScore)
 
-	// part 2
-	robots = readInput(fileName)
+	return safetyScore
+}
+
+func PartTwo(input []Robot, gridSize shared.Coord) int {
+	robots := copyRobots(input)
 
 	minLength := 9999
+	treeTime := 0
 	for i := 1; i < 10000; i++ {
 		for j := range robots {
 			robots[j].move(1, gridSize)
@@ -66,8 +79,11 @@ func main() {
 			}
 
 			minLength = len
+			treeTime = i
 		}
 	}
+
+	return treeTime
 }
 
 func readInput(filePath string) []Robot {
@@ -91,6 +107,12 @@ func readInput(filePath string) []Robot {
 	}
 
 	return robots
+}
+
+func copyRobots(robots []Robot) []Robot {
+	newRobots := make([]Robot, len(robots))
+	copy(newRobots, robots)
+	return newRobots
 }
 
 type Robot struct {

@@ -20,20 +20,30 @@ func main() {
 	}
 
 	// part 1
-	regions := readInput(fileName).regions()
+	regions := readInput(fileName)
 
+	totalPrice := PartOne(regions)
+	fmt.Printf("Total price is %d.\n", totalPrice)
+
+	// part 2
+	regions = readInput(fileName)
+
+	bulkPrice := PartTwo(regions)
+
+	fmt.Printf("Bulk price is %d.\n", bulkPrice)
+}
+
+func PartOne(regions []Region) int {
 	totalPrice := 0
 	for _, region := range regions {
 		area, perimeter := region.grid.measure()
 		totalPrice += area * perimeter
 		fmt.Printf("A region of %s plants with price %d * %d = %d.\n", region.plantType, area, perimeter, area*perimeter)
 	}
+	return totalPrice
+}
 
-	fmt.Printf("Total price is %d.\n", totalPrice)
-
-	// part 2
-	regions = readInput(fileName).regions()
-
+func PartTwo(regions []Region) int {
 	bulkPrice := 0
 	for _, region := range regions {
 		area, _ := region.grid.measure()
@@ -42,11 +52,10 @@ func main() {
 		bulkPrice += area * sides
 		fmt.Printf("A region of %s plants with price %d * %d = %d.\n", region.plantType, area, sides, area*sides)
 	}
-
-	fmt.Printf("Bulk price is %d.\n", bulkPrice)
+	return bulkPrice
 }
 
-func readInput(filePath string) Grid {
+func readInput(filePath string) []Region {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Printf("Error opening %s", filePath)
@@ -65,7 +74,7 @@ func readInput(filePath string) Grid {
 		grid = append(grid, row)
 	}
 
-	return grid
+	return grid.regions()
 }
 
 func makeGrid(width int, height int) Grid {

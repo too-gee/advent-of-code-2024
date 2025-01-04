@@ -23,6 +23,15 @@ func main() {
 	wordSearch := readInput(fileName)
 
 	// part 1
+	matches := PartOne(wordSearch)
+	fmt.Printf("There are %d XMAS matches.\n", matches)
+
+	// part 2
+	xMatches := PartTwo(wordSearch)
+	fmt.Printf("There are %d X-MAS matches.\n", xMatches)
+}
+
+func PartOne(wordSearch [][]string) int {
 	const matchString = "XMAS"
 
 	rows := len(wordSearch)
@@ -34,9 +43,10 @@ func main() {
 	matches += getMatchesInRuns(matchString, wordSearch, runsSouth(rows, cols))
 	matches += getMatchesInRuns(matchString, wordSearch, runsEast(rows, cols))
 
-	fmt.Printf("There are %d XMAS matches.\n", matches)
+	return matches
+}
 
-	// part 2
+func PartTwo(wordSearch [][]string) int {
 	matchPatterns := [][][]string{
 		{{"M", ".", "M"}, {".", "A", "."}, {"S", ".", "S"}},
 		{{"M", ".", "S"}, {".", "A", "."}, {"M", ".", "S"}},
@@ -49,7 +59,7 @@ func main() {
 		xMatches += getXMatches(matchPattern, wordSearch)
 	}
 
-	fmt.Printf("There are %d X-MAS matches.\n", xMatches)
+	return xMatches
 }
 
 // returns the number of times a version of an X-MAS appears in the charSlice

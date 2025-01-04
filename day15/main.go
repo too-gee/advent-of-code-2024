@@ -21,41 +21,39 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	displayMap := !strings.HasSuffix(fileName, "input.txt")
-
 	// part 1
 	grid, moves := readInput(fileName)
+	gpsValue := PartOne(grid, moves)
+	fmt.Printf("The GPS coordinate sum is %d\n", gpsValue)
+
+	// part 2
+	grid, moves = readInput(fileName)
+	gpsValue = PartTwo(grid, moves)
+	fmt.Printf("The GPS coordinate sum is %d\n", gpsValue)
+}
+
+func PartOne(grid Grid, moves []string) int {
 	warehouse := Warehouse{grid: grid, direction: N}
 
 	for _, move := range moves {
-		if displayMap {
-			warehouse.draw()
-			fmt.Printf("Move: %v\n", move)
-		}
-
 		warehouse.moveRobot(move)
 	}
 
 	warehouse.draw()
 
-	fmt.Printf("The GPS coordinate sum is %d\n", warehouse.gpsValue())
+	return warehouse.gpsValue()
+}
 
-	// part 2
-	grid, moves = readInput(fileName)
-	warehouse = Warehouse{grid: grid}
+func PartTwo(grid Grid, moves []string) int {
+	warehouse := Warehouse{grid: grid}
 	warehouse.widen()
 
-	for i, move := range moves {
-		if displayMap {
-			warehouse.draw()
-			fmt.Printf("Move: %d = %v\n", i, move)
-		}
-
+	for _, move := range moves {
 		warehouse.wideMoveRobot(move)
 	}
 	warehouse.draw()
 
-	fmt.Printf("The GPS coordinate sum is %d\n", warehouse.gpsValue())
+	return warehouse.gpsValue()
 }
 
 func readInput(filePath string) (Grid, []string) {

@@ -20,7 +20,12 @@ func main() {
 	allMatches := readInput(fileName)
 
 	// part 1 && part 2
+	runningTotal, switchedRunningTotal := Solve(allMatches)
+	fmt.Printf("Running total: %d\n", runningTotal)
+	fmt.Printf("Switched running total: %d\n", switchedRunningTotal)
+}
 
+func Solve(allMatches [][]string) (int, int) {
 	runningTotal := 0
 	switchedRunningTotal := 0
 	enabled := true
@@ -42,8 +47,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Running total: %d\n", runningTotal)
-	fmt.Printf("Switched running total: %d\n", switchedRunningTotal)
+	return runningTotal, switchedRunningTotal
 }
 
 func readInput(filePath string) [][]string {

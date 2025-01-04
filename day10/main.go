@@ -23,24 +23,36 @@ func main() {
 	topoMap := readInput(fileName)
 
 	// part 1
-	trailHeads := topoMap.trailHeads()
+	totalScore := PartOne(topoMap)
+	fmt.Printf("The sum of the scores of all trailheads is %d\n", totalScore)
 
+	// part 2
+	totalRating := PartTwo(topoMap)
+	fmt.Printf("The sum of the ratings of all trailheads is %d\n", totalRating)
+}
+
+func PartOne(topoMap Map) int {
 	totalScore := 0
+
+	trailHeads := topoMap.trailHeads()
 
 	for _, trailHead := range trailHeads {
 		totalScore += len(topoMap.trailEnds(trailHead))
 	}
 
-	fmt.Printf("The sum of the scores of all trailheads is %d\n", totalScore)
+	return totalScore
+}
 
-	// part 2
+func PartTwo(topoMap Map) int {
 	totalRating := 0
+
+	trailHeads := topoMap.trailHeads()
 
 	for _, trailHead := range trailHeads {
 		totalRating += topoMap.trailPaths(trailHead)
 	}
 
-	fmt.Printf("The sum of the ratings of all trailheads is %d\n", totalRating)
+	return totalRating
 }
 
 func readInput(filePath string) Map {

@@ -21,12 +21,22 @@ func main() {
 	disk := readInput(fileName)
 
 	// part 1
-	defragged := disk.expand().defrag()
-	fmt.Printf("Checksum after standard defrag: %v\n", defragged.checksum())
+	checksum := PartOne(disk)
+	fmt.Printf("Checksum after standard defrag: %v\n", checksum)
 
 	// part 2
+	checksum = PartTwo(disk)
+	fmt.Printf("Checksum after smart defrag: %v\n", checksum)
+}
+
+func PartOne(disk Disk) int {
+	defragged := disk.expand().defrag()
+	return defragged.checksum()
+}
+
+func PartTwo(disk Disk) int {
 	smartDefragged := disk.expand().smartDefrag()
-	fmt.Printf("Checksum after smart defrag: %v\n", smartDefragged.checksum())
+	return smartDefragged.checksum()
 }
 
 func readInput(filePath string) Disk {

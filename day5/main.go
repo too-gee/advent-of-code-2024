@@ -21,6 +21,15 @@ func main() {
 	rules, updates := readInput(fileName)
 
 	// part 1
+	pageSum := PartOne(rules, updates)
+	fmt.Printf("The sum of the middle page numbers is %d\n", pageSum)
+
+	// part 2
+	correctedPageSum := PartTwo(rules, updates)
+	fmt.Printf("The sum of the corrected middle page numbers is %d\n", correctedPageSum)
+}
+
+func PartOne(rules [][]int, updates [][]int) int {
 	pageSum := 0
 	incorrectUpdates := [][]int{}
 
@@ -32,9 +41,18 @@ func main() {
 		}
 	}
 
-	fmt.Printf("The sum of the middle page numbers is %d\n", pageSum)
+	return pageSum
+}
 
-	// part 2
+func PartTwo(rules [][]int, updates [][]int) int {
+	incorrectUpdates := [][]int{}
+
+	for _, update := range updates {
+		if !updateIsCorrect(update, rules) {
+			incorrectUpdates = append(incorrectUpdates, update)
+		}
+	}
+
 	correctedPageSum := 0
 	for _, update := range incorrectUpdates {
 		ruleIndex := 0
@@ -66,7 +84,7 @@ func main() {
 		correctedPageSum += middlePageValue(update)
 	}
 
-	fmt.Printf("The sum of the corrected middle page numbers is %d\n", correctedPageSum)
+	return correctedPageSum
 }
 
 func updateIsCorrect(update []int, rules [][]int) bool {

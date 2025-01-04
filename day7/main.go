@@ -21,6 +21,15 @@ func main() {
 	equations := readInput(fileName)
 
 	// part 1
+	totalCalibrationResult := PartOne(equations)
+	fmt.Printf("The total calibration result is %d\n", totalCalibrationResult)
+
+	// part 2
+	totalCalibrationResult = PartTwo(equations)
+	fmt.Printf("The NEW total calibration result is %d\n", totalCalibrationResult)
+}
+
+func PartOne(equations [][]int) int {
 	totalCalibrationResult := 0
 
 	for _, equation := range equations {
@@ -57,10 +66,11 @@ func main() {
 		}
 	}
 
-	fmt.Printf("The total calibration result is %d\n", totalCalibrationResult)
+	return totalCalibrationResult
+}
 
-	// part 2
-	totalCalibrationResult = 0
+func PartTwo(equations [][]int) int {
+	totalCalibrationResult := 0
 
 	for _, equation := range equations {
 		permutations := permutations(len(equation)-2, []string{"+", "*", "||"})
@@ -101,7 +111,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("The NEW total calibration result is %d\n", totalCalibrationResult)
+	return totalCalibrationResult
 }
 
 func readInput(filePath string) [][]int {

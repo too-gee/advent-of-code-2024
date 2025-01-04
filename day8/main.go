@@ -24,22 +24,18 @@ func main() {
 	grid := readInput(fileName)
 
 	// part 1
-	frequencies := getUniqueCharacters(grid)
-	antennaLocations := map[string]coordList{}
+	antiNodeLocationCount := PartOne(grid)
+	fmt.Printf("There are %d unique locations that contain an antinode\n", antiNodeLocationCount)
+
+	// part 2
+	antiNodeLocationCount = PartTwo(grid)
+	fmt.Printf("There are %d unique locations that contain a resonant antinode\n", antiNodeLocationCount)
+}
+
+func PartOne(grid [][]string) int {
 	antiNodeLocations := coordList{}
 
-	for _, frequency := range frequencies {
-		antennaLocations[frequency] = coordList{}
-		for y, row := range grid {
-			for x, cell := range row {
-				if cell == frequency {
-					antennaLocations[frequency] = append(antennaLocations[frequency], shared.Coord{X: x, Y: y})
-				}
-			}
-		}
-	}
-
-	for _, antennas := range antennaLocations {
+	for _, antennas := range getAntennaLocations(grid) {
 		pairs := pairs(makeRange(0, len(antennas)-1))
 
 		for _, pair := range pairs {
@@ -54,10 +50,13 @@ func main() {
 		}
 	}
 
-	fmt.Printf("There are %d unique locations that contain an antinode\n", len(antiNodeLocations))
+	return len(antiNodeLocations)
+}
 
-	// part 2
-	for _, antennas := range antennaLocations {
+func PartTwo(grid [][]string) int {
+	antiNodeLocations := coordList{}
+
+	for _, antennas := range getAntennaLocations(grid) {
 		pairs := pairs(makeRange(0, len(antennas)-1))
 
 		for _, pair := range pairs {
@@ -91,7 +90,25 @@ func main() {
 		}
 	}
 
-	fmt.Printf("There are %d unique locations that contain a resonant antinode\n", len(antiNodeLocations))
+	return len(antiNodeLocations)
+}
+
+func getAntennaLocations(grid [][]string) map[string]coordList {
+	frequencies := getUniqueCharacters(grid)
+	antennaLocations := map[string]coordList{}
+
+	for _, frequency := range frequencies {
+		antennaLocations[frequency] = coordList{}
+		for y, row := range grid {
+			for x, cell := range row {
+				if cell == frequency {
+					antennaLocations[frequency] = append(antennaLocations[frequency], shared.Coord{X: x, Y: y})
+				}
+			}
+		}
+	}
+
+	return antennaLocations
 }
 
 func readInput(filePath string) [][]string {

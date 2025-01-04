@@ -20,35 +20,46 @@ func main() {
 	reports := readInput(fileName)
 
 	// part 1
-	safeReports := 0
-	unsafeReports := [][]int{}
-
-	for _, report := range reports {
-		if reportIsSafe(report, false) {
-			safeReports++
-		} else {
-			unsafeReports = append(unsafeReports, report)
-		}
-	}
-
+	safeReports := PartOne(reports)
 	fmt.Printf("Safe reports: %d\n", safeReports)
 
 	// part 2
+	safeDamped := PartTwo(reports)
+	fmt.Printf("Reports made safe by damping: %d\n", safeDamped-safeReports)
+	fmt.Printf("Total safe reports after damping: %d\n", safeDamped)
+}
 
-	safeDamped := 0
+func PartOne(reports [][]int) int {
+	safeReports := 0
 
-	for _, report := range unsafeReports {
-		for i := range report {
-			dampedReport := excludeIndex(report, i)
-			if reportIsSafe(dampedReport, false) {
-				safeDamped += 1
-				break
-			}
+	for _, report := range reports {
+		if reportIsSafe(report) {
+			safeReports++
 		}
 	}
 
-	fmt.Printf("Reports made safe by damping: %d\n", safeDamped)
-	fmt.Printf("Total safe reports after damping: %d\n", safeReports+safeDamped)
+	return safeReports
+}
+
+func PartTwo(reports [][]int) int {
+	safeReports := 0
+
+	for _, report := range reports {
+		if reportIsSafe(report) {
+			safeReports++
+		} else {
+			for i := range report {
+				dampedReport := excludeIndex(report, i)
+				if reportIsSafe(dampedReport) {
+					safeReports += 1
+					break
+				}
+			}
+		}
+
+	}
+
+	return safeReports
 }
 
 func compare(first int, second int) int {
@@ -61,15 +72,12 @@ func compare(first int, second int) int {
 	}
 }
 
-func reportIsSafe(report []int, debug bool) bool {
+func reportIsSafe(report []int) bool {
 	var currentDirection int
 
 	reportIsSafe := true
-	debugOutput := "debug ->"
 
 	for j, currentValue := range report {
-		debugOutput += " " + strconv.Itoa(currentValue)
-
 		if j == 0 {
 			// set up in first loop
 			currentDirection = compare(report[0], report[1])
@@ -84,17 +92,11 @@ func reportIsSafe(report []int, debug bool) bool {
 		distance := (currentValue - previousValue) * currentDirection
 
 		if distance < 1 || distance > 3 {
-			if debug {
-				fmt.Printf("%s -- difference too big\n", debugOutput)
-			}
 			reportIsSafe = false
 			break
 		}
 
 		if previousDirection != currentDirection {
-			if debug {
-				fmt.Printf("%s -- direction changed\n", debugOutput)
-			}
 			reportIsSafe = false
 			break
 		}

@@ -21,6 +21,15 @@ func main() {
 	clawMachines := readInput(fileName)
 
 	// part 1
+	totalCost := PartOne(clawMachines)
+	fmt.Printf("Total cost: %d\n", totalCost)
+
+	// part 2
+	totalCost = PartTwo(clawMachines)
+	fmt.Printf("Total cost: %d\n", totalCost)
+}
+
+func PartOne(clawMachines []ClawMachine) int {
 	totalCost := 0
 
 	for i, clawMachine := range clawMachines {
@@ -44,10 +53,11 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Total cost: %d\n", totalCost)
+	return totalCost
+}
 
-	// part 2
-	totalCost = 0
+func PartTwo(clawMachines []ClawMachine) int {
+	totalCost := 0
 
 	for i, clawMachine := range clawMachines {
 		clawMachine.prize.X += 10000000000000
@@ -78,7 +88,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Total cost: %d\n", totalCost)
+	return totalCost
 }
 
 func readInput(filePath string) []ClawMachine {
@@ -102,7 +112,7 @@ func readInput(filePath string) []ClawMachine {
 		i, err := fmt.Sscanf(line, "Prize: X=%d, Y=%d", &prizeX, &prizeY)
 
 		if err == nil && i == 2 {
-			clawMachines = append(clawMachines, ClawMachine{buttonA: shared.Coord{buttonAx, buttonAy}, buttonB: shared.Coord{buttonBx, buttonBy}, prize: shared.Coord{prizeX, prizeY}})
+			clawMachines = append(clawMachines, ClawMachine{buttonA: shared.Coord{X: buttonAx, Y: buttonAy}, buttonB: shared.Coord{X: buttonBx, Y: buttonBy}, prize: shared.Coord{X: prizeX, Y: prizeY}})
 		}
 	}
 
@@ -116,7 +126,7 @@ type ClawMachine struct {
 }
 
 func (c ClawMachine) play(aPresses int, bPresses int) (int, bool) {
-	position := shared.Coord{0, 0}
+	position := shared.Coord{X: 0, Y: 0}
 	cost := 0
 
 	position.X += aPresses * c.buttonA.X

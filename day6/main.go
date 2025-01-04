@@ -18,8 +18,21 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	// part 1
 	lab := readInput(fileName)
+
+	// part 1
+	visitedLocations := PartOne(lab)
+
+	fmt.Printf("Guard will visit %d positions before leaving the area\n", visitedLocations)
+
+	// part 2
+	waysToLoop := PartTwo(lab)
+
+	fmt.Printf("There are %d useful positions for the new obstruction.\n", waysToLoop)
+}
+
+func PartOne(input area) int {
+	lab := input.copy()
 
 	for {
 		nextLocation := lab.guard.nextLocation()
@@ -36,14 +49,15 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Guard will visit %d positions before leaving the area\n", lab.visitedLocationCount())
+	return lab.visitedLocationCount()
+}
 
-	// part 2
+func PartTwo(input area) int {
 	waysToLoop := 0
 
-	for x := 0; x < len(lab.grid[0]); x++ {
-		for y := 0; y < len(lab.grid); y++ {
-			lab := readInput(fileName)
+	for x := 0; x < len(input.grid[0]); x++ {
+		for y := 0; y < len(input.grid); y++ {
+			lab := input.copy()
 
 			if lab.isObstructed(x, y) {
 				continue
@@ -79,7 +93,7 @@ func main() {
 		}
 	}
 
-	fmt.Printf("There are %d useful positions for the new obstruction.\n", waysToLoop)
+	return waysToLoop
 }
 
 func readInput(filePath string) area {
@@ -175,6 +189,19 @@ func (e *entity) move() {
 type area struct {
 	grid  [][]string
 	guard entity
+}
+
+func (m area) copy() area {
+	newGrid := make([][]string, len(m.grid))
+	for y, row := range m.grid {
+		newRow := make([]string, len(row))
+		copy(newRow, row)
+		newGrid[y] = newRow
+	}
+
+	newGuard := entity{x: m.guard.x, y: m.guard.y, direction: m.guard.direction}
+
+	return area{grid: newGrid, guard: newGuard}
 }
 
 func (m *area) draw() {
