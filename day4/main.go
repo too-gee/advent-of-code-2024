@@ -31,7 +31,7 @@ func main() {
 	fmt.Printf("There are %d X-MAS matches.\n", xMatches)
 }
 
-func PartOne(wordSearch [][]string) int {
+func PartOne(wordSearch shared.Grid) int {
 	const matchString = "XMAS"
 
 	rows := len(wordSearch)
@@ -46,8 +46,8 @@ func PartOne(wordSearch [][]string) int {
 	return matches
 }
 
-func PartTwo(wordSearch [][]string) int {
-	matchPatterns := [][][]string{
+func PartTwo(wordSearch shared.Grid) int {
+	matchPatterns := []shared.Grid{
 		{{"M", ".", "M"}, {".", "A", "."}, {"S", ".", "S"}},
 		{{"M", ".", "S"}, {".", "A", "."}, {"M", ".", "S"}},
 		{{"S", ".", "S"}, {".", "A", "."}, {"M", ".", "M"}},
@@ -63,7 +63,7 @@ func PartTwo(wordSearch [][]string) int {
 }
 
 // returns the number of times a version of an X-MAS appears in the charSlice
-func getXMatches(matchPattern [][]string, charSlice [][]string) int {
+func getXMatches(matchPattern shared.Grid, charSlice shared.Grid) int {
 	matchWidth := len(matchPattern[0])
 	matchHeight := len(matchPattern)
 
@@ -74,7 +74,7 @@ func getXMatches(matchPattern [][]string, charSlice [][]string) int {
 
 	for x := 0; x < searchWidth-matchWidth+1; x++ {
 		for y := 0; y < searchHeight-matchHeight+1; y++ {
-			subSlice := make([][]string, matchHeight)
+			subSlice := make(shared.Grid, matchHeight)
 
 			for row := 0; row < matchHeight; row++ {
 				subSlice[row] = charSlice[y+row][x : x+matchWidth]
@@ -91,7 +91,7 @@ func getXMatches(matchPattern [][]string, charSlice [][]string) int {
 
 // returns true if the matchPattern is a match for charSlice, assumes that
 // matchPattern and charSlice are the same size
-func isMatch(matchPattern [][]string, charSlice [][]string) bool {
+func isMatch(matchPattern shared.Grid, charSlice shared.Grid) bool {
 	for x := 0; x < len(matchPattern[0]); x++ {
 		for y := 0; y < len(matchPattern); y++ {
 			if matchPattern[y][x] == "." {
@@ -109,7 +109,7 @@ func isMatch(matchPattern [][]string, charSlice [][]string) bool {
 
 // returns the number of times the matchString appears in the charSlice
 // when following run coordinates
-func getMatchesInRuns(matchString string, charSlice [][]string, runs [][]shared.Coord) int {
+func getMatchesInRuns(matchString string, charSlice shared.Grid, runs [][]shared.Coord) int {
 	matchCount := 0
 
 	matchStringReversed := reverseString(matchString)
@@ -217,7 +217,7 @@ func runsSouth(rows int, cols int) [][]shared.Coord {
 	return result
 }
 
-func readInput(filePath string) [][]string {
+func readInput(filePath string) shared.Grid {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -225,7 +225,7 @@ func readInput(filePath string) [][]string {
 	}
 	defer file.Close()
 
-	var charSlice [][]string
+	var charSlice shared.Grid
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {

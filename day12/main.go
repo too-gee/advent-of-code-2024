@@ -36,7 +36,7 @@ func main() {
 func PartOne(regions []Region) int {
 	totalPrice := 0
 	for _, region := range regions {
-		area, perimeter := region.grid.measure()
+		area, perimeter := region.measure()
 		totalPrice += area * perimeter
 		fmt.Printf("A region of %s plants with price %d * %d = %d.\n", region.plantType, area, perimeter, area*perimeter)
 	}
@@ -46,8 +46,8 @@ func PartOne(regions []Region) int {
 func PartTwo(regions []Region) int {
 	bulkPrice := 0
 	for _, region := range regions {
-		area, _ := region.grid.measure()
-		sides := region.grid.dumbSideCount()
+		area, _ := region.measure()
+		sides := region.dumbSideCount()
 
 		bulkPrice += area * sides
 		fmt.Printf("A region of %s plants with price %d * %d = %d.\n", region.plantType, area, sides, area*sides)
@@ -63,7 +63,7 @@ func readInput(filePath string) []Region {
 	}
 	defer file.Close()
 
-	grid := Grid{}
+	grid := shared.Grid{}
 
 	scanner := bufio.NewScanner(file)
 
@@ -74,11 +74,13 @@ func readInput(filePath string) []Region {
 		grid = append(grid, row)
 	}
 
-	return grid.regions()
+	tmpRegion := Region{plantType: "?", Grid: grid}
+
+	return tmpRegion.regions()
 }
 
-func makeGrid(width int, height int) Grid {
-	tmp := make(Grid, height)
+func makeGrid(width int, height int) shared.Grid {
+	tmp := make(shared.Grid, height)
 
 	for i := range tmp {
 		tmp[i] = make([]string, width)
@@ -91,24 +93,22 @@ func makeGrid(width int, height int) Grid {
 	return tmp
 }
 
-type Grid [][]string
-
 type Region struct {
 	plantType string
-	grid      Grid
+	shared.Grid
 }
 
-func (g Grid) draw() {
-	g.drawWithMarkers(map[shared.Coord]string{})
+func (r Region) draw() {
+	r.drawWithMarkers(map[shared.Coord]string{})
 }
 
-func (g Grid) drawWithMarkers(markers map[shared.Coord]string) {
-	yMin, yMax := g.height()-1, 0
-	xMin, xMax := g.width()-1, 0
+func (r Region) drawWithMarkers(markers map[shared.Coord]string) {
+	yMin, yMax := r.Height()-1, 0
+	xMin, xMax := r.Width()-1, 0
 
-	for y := range g {
-		for x := range g[y] {
-			if g[y][x] != "." {
+	for y := range r.Height() {
+		for x := range r.Width() {
+			if r.Grid[y][x] != "." {
 				yMin = int(math.Min(float64(yMin), float64(y)))
 				yMax = int(math.Max(float64(yMax), float64(y)))
 				xMin = int(math.Min(float64(xMin), float64(x)))
@@ -124,7 +124,7 @@ func (g Grid) drawWithMarkers(markers map[shared.Coord]string) {
 
 	for y := yMin - borderThickness - bufferThickness; y <= yMax+borderThickness+bufferThickness; y++ {
 		for x := xMin - borderThickness - bufferThickness; x <= xMax+borderThickness+bufferThickness; x++ {
-			loc := shared.Coord{x, y}
+			loc := shared.Coord{X: x, Y: y}
 
 			// print the border
 			if x >= xMin-borderThickness-bufferThickness && x < xMin-bufferThickness ||
@@ -151,8 +151,8 @@ func (g Grid) drawWithMarkers(markers map[shared.Coord]string) {
 			}
 
 			// print the rest of the grid
-			if g.isInGrid(loc) {
-				switch g[y][x] {
+			if r.Contains(loc) {
+				switch r.Grid[y][x] {
 				case ".":
 					output += "　"
 				case "@":
@@ -190,7 +190,7 @@ func (g Grid) drawWithMarkers(markers map[shared.Coord]string) {
 				case "O":
 					output += "🟫"
 				default:
-					output += g[y][x] + g[y][x]
+					output += r.Grid[y][x] + r.Grid[y][x]
 				}
 			}
 		}
@@ -200,20 +200,12 @@ func (g Grid) drawWithMarkers(markers map[shared.Coord]string) {
 	fmt.Print(output)
 }
 
-func (g Grid) width() int {
-	return len(g[0])
-}
-
-func (g Grid) height() int {
-	return len(g)
-}
-
-func (g Grid) measure() (int, int) {
+func (r Region) measure() (int, int) {
 	area := 0
 	perimeter := 0
 
-	visited := makeGrid(g.width(), g.height())
-	toVisit := []shared.Coord{g.firstCell("x")}
+	visited := makeGrid(r.Width(), r.Height())
+	toVisit := []shared.Coord{r.LocationOf("x")}
 
 	for i := 0; i < len(toVisit); i++ {
 		loc := toVisit[i]
@@ -222,7 +214,7 @@ func (g Grid) measure() (int, int) {
 			continue
 		}
 
-		neighbors := g.neighborCoords(loc)
+		neighbors := r.neighborCoords(loc)
 
 		visited[loc.Y][loc.X] = "x"
 		toVisit = append(toVisit, neighbors...)
@@ -234,39 +226,10 @@ func (g Grid) measure() (int, int) {
 	return area, perimeter
 }
 
-func (g Grid) firstCell(value string) shared.Coord {
+func (r Region) regions() []Region {
+	coveredGrid := makeGrid(r.Width(), r.Height())
 
-	for y, row := range g {
-		for x := range row {
-			if g[y][x] == value {
-
-				return shared.Coord{X: x, Y: y}
-			}
-		}
-	}
-
-	return shared.Coord{X: -1, Y: -1}
-}
-
-func (g Grid) regions() []Region {
-	regions := []Region{}
-
-	floods := g.floods()
-
-	for _, flood := range floods {
-		plantTypeCoord := flood.firstCell("x")
-		plantType := g[plantTypeCoord.Y][plantTypeCoord.X]
-
-		regions = append(regions, Region{plantType: plantType, grid: flood})
-	}
-
-	return regions
-}
-
-func (g Grid) floods() []Grid {
-	coveredGrid := makeGrid(len(g[0]), len(g))
-
-	floods := []Grid{}
+	floods := []Region{}
 
 	for y, row := range coveredGrid {
 		for x, covered := range row {
@@ -274,14 +237,14 @@ func (g Grid) floods() []Grid {
 				continue
 			}
 
-			flood := g.flood(shared.Coord{X: x, Y: y})
+			flood := r.flood(shared.Coord{X: x, Y: y})
 
 			area, _ := flood.measure()
 			if area > 0 {
 				floods = append(floods, flood)
 			}
 
-			for i, tmpRow := range flood {
+			for i, tmpRow := range flood.Grid {
 				for j, tmpCell := range tmpRow {
 					if tmpCell == "x" {
 						coveredGrid[i][j] = "x"
@@ -294,15 +257,12 @@ func (g Grid) floods() []Grid {
 	return floods
 }
 
-func (g Grid) neighborCoords(loc shared.Coord) []shared.Coord {
+func (r Region) neighborCoords(loc shared.Coord) []shared.Coord {
 	neighbors := []shared.Coord{}
-	value := g[loc.Y][loc.X]
+	value := r.Grid[loc.Y][loc.X]
 
-	offsets := []shared.Coord{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
-
-	for _, offset := range offsets {
-		candidate := shared.Coord{X: loc.X + offset.X, Y: loc.Y + offset.Y}
-		if g.isInGrid(candidate) && g[candidate.Y][candidate.X] == value {
+	for _, candidate := range loc.Neighbors() {
+		if r.Contains(candidate) && r.Grid[candidate.Y][candidate.X] == value {
 			neighbors = append(neighbors, candidate)
 		}
 	}
@@ -310,18 +270,10 @@ func (g Grid) neighborCoords(loc shared.Coord) []shared.Coord {
 	return neighbors
 }
 
-func (g Grid) isInGrid(l shared.Coord) bool {
-	return l.X >= 0 &&
-		l.X < len(g[0]) &&
-		l.Y >= 0 &&
-		l.Y < len(g)
-}
+func (r Region) flood(loc shared.Coord) Region {
+	plantType := r.Grid[loc.Y][loc.X]
 
-func (g Grid) flood(loc shared.Coord) Grid {
-
-	plantType := g[loc.Y][loc.X]
-
-	regionGrid := makeGrid(g.width(), g.height())
+	regionGrid := makeGrid(r.Width(), r.Height())
 	toVisit := []shared.Coord{loc}
 
 	for {
@@ -336,7 +288,7 @@ func (g Grid) flood(loc shared.Coord) Grid {
 			}
 
 			// skipping because this is another region
-			if g[start.Y][start.X] != plantType {
+			if r.Grid[start.Y][start.X] != plantType {
 				continue
 			}
 
@@ -346,7 +298,7 @@ func (g Grid) flood(loc shared.Coord) Grid {
 			newVisits = true
 
 			// try visiting neighbors
-			toVisit = append(toVisit, g.neighborCoords(start)...)
+			toVisit = append(toVisit, r.neighborCoords(start)...)
 		}
 
 		if !newVisits {
@@ -354,56 +306,56 @@ func (g Grid) flood(loc shared.Coord) Grid {
 		}
 	}
 
-	return regionGrid
+	return Region{plantType: plantType, Grid: regionGrid}
 }
 
-func (g *Grid) rotate(dir string) {
+func (r *Region) rotate(dir string) {
 	// rotate the grid
-	width, height := (*g).width(), (*g).height()
+	width, height := (*r).Grid.Width(), (*r).Grid.Height()
 	result := makeGrid(width, height)
 
 	for y := 0; y < width; y++ {
 		for x := 0; x < height; x++ {
 			if dir == "L" {
-				result[height-1-x][y] = (*g)[y][x]
+				result[height-1-x][y] = (*r).Grid[y][x]
 			}
 
 			if dir == "R" {
-				result[x][height-1-y] = (*g)[y][x]
+				result[x][height-1-y] = (*r).Grid[y][x]
 			}
 		}
 	}
 
-	*g = result
+	(*r).Grid = result
 }
 
-func (g Grid) dumbSideCount() int {
-	runs := g.dumbRunCount()
-	g.rotate("R")
-	runs += g.dumbRunCount()
+func (r Region) dumbSideCount() int {
+	runs := r.dumbRunCount()
+	r.rotate("R")
+	runs += r.dumbRunCount()
 
 	return runs
 }
 
-func (g Grid) dumbRunCount() int {
+func (r Region) dumbRunCount() int {
 	runs := 0
 
-	for y := 0; y < g.height()+1; y++ {
+	for y := 0; y < r.Height()+1; y++ {
 		// collapse each row into unique sections
 		row := []string{}
 
-		for x := 0; x < g.width(); x++ {
+		for x := 0; x < r.Width(); x++ {
 			upper := ""
 			lower := ""
 
-			if g.isInGrid(shared.Coord{X: x, Y: y - 1}) {
-				upper = g[y-1][x]
+			if r.Contains(shared.Coord{X: x, Y: y - 1}) {
+				upper = r.Grid[y-1][x]
 			} else {
 				upper = "."
 			}
 
-			if g.isInGrid(shared.Coord{X: x, Y: y}) {
-				lower = g[y][x]
+			if r.Contains(shared.Coord{X: x, Y: y}) {
+				lower = r.Grid[y][x]
 			} else {
 				lower = "."
 			}

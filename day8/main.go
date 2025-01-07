@@ -32,7 +32,7 @@ func main() {
 	fmt.Printf("There are %d unique locations that contain a resonant antinode\n", antiNodeLocationCount)
 }
 
-func PartOne(grid [][]string) int {
+func PartOne(grid shared.Grid) int {
 	antiNodeLocations := coordList{}
 
 	for _, antennas := range getAntennaLocations(grid) {
@@ -44,7 +44,7 @@ func PartOne(grid [][]string) int {
 
 			antinode := shared.Coord{X: (2 * antennaA.X) - antennaB.X, Y: (2 * antennaA.Y) - antennaB.Y}
 
-			if isInGrid(antinode, grid) && !slices.Contains(antiNodeLocations, antinode) {
+			if grid.Contains(antinode) && !slices.Contains(antiNodeLocations, antinode) {
 				antiNodeLocations = append(antiNodeLocations, antinode)
 			}
 		}
@@ -53,7 +53,7 @@ func PartOne(grid [][]string) int {
 	return len(antiNodeLocations)
 }
 
-func PartTwo(grid [][]string) int {
+func PartTwo(grid shared.Grid) int {
 	antiNodeLocations := coordList{}
 
 	for _, antennas := range getAntennaLocations(grid) {
@@ -75,7 +75,7 @@ func PartTwo(grid [][]string) int {
 			for {
 				antinode := shared.Coord{X: currentX + run, Y: currentY + rise}
 
-				if !isInGrid(antinode, grid) {
+				if !grid.Contains(antinode) {
 					break
 				}
 
@@ -93,7 +93,7 @@ func PartTwo(grid [][]string) int {
 	return len(antiNodeLocations)
 }
 
-func getAntennaLocations(grid [][]string) map[string]coordList {
+func getAntennaLocations(grid shared.Grid) map[string]coordList {
 	frequencies := getUniqueCharacters(grid)
 	antennaLocations := map[string]coordList{}
 
@@ -111,7 +111,7 @@ func getAntennaLocations(grid [][]string) map[string]coordList {
 	return antennaLocations
 }
 
-func readInput(filePath string) [][]string {
+func readInput(filePath string) shared.Grid {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Printf("Error opening %s", filePath)
@@ -119,7 +119,7 @@ func readInput(filePath string) [][]string {
 	}
 	defer file.Close()
 
-	grid := [][]string{}
+	grid := shared.Grid{}
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
@@ -132,7 +132,7 @@ func readInput(filePath string) [][]string {
 	return grid
 }
 
-func getUniqueCharacters(grid [][]string) []string {
+func getUniqueCharacters(grid shared.Grid) []string {
 	uniqueChars := make(map[string]bool)
 
 	ignoredChars := []string{"."}
@@ -183,13 +183,6 @@ func makeRange(min, max int) []int {
 		a[i] = min + i
 	}
 	return a
-}
-
-func isInGrid(l shared.Coord, grid [][]string) bool {
-	if l.X >= 0 && l.X < len(grid) && l.Y >= 0 && l.Y < len(grid[0]) {
-		return true
-	}
-	return false
 }
 
 type coordList []shared.Coord

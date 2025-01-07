@@ -32,8 +32,8 @@ func main() {
 	fmt.Printf("The GPS coordinate sum is %d\n", gpsValue)
 }
 
-func PartOne(grid Grid, moves []string) int {
-	warehouse := Warehouse{grid: grid, direction: N}
+func PartOne(grid shared.Grid, moves []string) int {
+	warehouse := Warehouse{Grid: grid, direction: N}
 
 	for _, move := range moves {
 		warehouse.moveRobot(move)
@@ -44,8 +44,8 @@ func PartOne(grid Grid, moves []string) int {
 	return warehouse.gpsValue()
 }
 
-func PartTwo(grid Grid, moves []string) int {
-	warehouse := Warehouse{grid: grid}
+func PartTwo(grid shared.Grid, moves []string) int {
+	warehouse := Warehouse{Grid: grid}
 	warehouse.widen()
 
 	for _, move := range moves {
@@ -56,7 +56,7 @@ func PartTwo(grid Grid, moves []string) int {
 	return warehouse.gpsValue()
 }
 
-func readInput(filePath string) (Grid, []string) {
+func readInput(filePath string) (shared.Grid, []string) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Printf("Error opening %s", filePath)
@@ -66,7 +66,7 @@ func readInput(filePath string) (Grid, []string) {
 
 	scanner := bufio.NewScanner(file)
 
-	grid := Grid{}
+	grid := shared.Grid{}
 	moves := []string{}
 
 	readMoves := false
@@ -91,8 +91,8 @@ func readInput(filePath string) (Grid, []string) {
 	return grid, moves
 }
 
-func makeGrid(width int, height int) Grid {
-	tmp := make(Grid, height)
+func makeGrid(width int, height int) shared.Grid {
+	tmp := make(shared.Grid, height)
 
 	for i := range tmp {
 		tmp[i] = make([]string, width)
@@ -127,10 +127,8 @@ const RIGHT = ">"
 const DOWN = "v"
 const LEFT = "<"
 
-type Grid [][]string
-
 type Warehouse struct {
-	grid      Grid
+	shared.Grid
 	direction int
 	wide      bool
 }
@@ -157,21 +155,21 @@ func (w *Warehouse) turnToFace(dir int) {
 	}
 
 	for _, turn := range turns {
-		(*w).grid.rotate(turn)
+		(*w).rotate(turn)
 	}
 
 	(*w).direction = dir
 }
 
 func (w *Warehouse) widen() {
-	wideGrid := Grid{}
+	wideGrid := shared.Grid{}
 
-	for y := range (*w).grid.height() {
+	for y := range (*w).Height() {
 		wideRow := []string{}
-		for x := range (*w).grid.width() {
+		for x := range (*w).Width() {
 			var newItem string
 
-			switch (*w).grid[y][x] {
+			switch (*w).Grid[y][x] {
 			case WALL:
 				newItem = DBL_WALL
 			case BOX:
@@ -187,79 +185,39 @@ func (w *Warehouse) widen() {
 		wideGrid = append(wideGrid, wideRow)
 	}
 
-	(*w).grid = wideGrid
+	(*w).Grid = wideGrid
 	(*w).wide = true
 }
 
-func (w *Warehouse) draw() {
-	(*w).turnToFace(N)
-	(*w).grid.draw(w.wide)
-}
-
-func (g Grid) isInGrid(l shared.Coord) bool {
-	return l.X >= 0 &&
-		l.X < g.width() &&
-		l.Y >= 0 &&
-		l.Y < g.height()
-}
-
-func (g Grid) width() int {
-	return len(g[0])
-}
-
-func (g Grid) height() int {
-	return len(g)
-}
-
-func (g *Grid) rotate(dir int) {
+func (w *Warehouse) rotate(dir int) {
 	// rotate the grid
-	width, height := (*g).width(), (*g).height()
+	width, height := (*w).Width(), (*w).Height()
 	result := makeGrid(width, height)
 
 	for y := 0; y < width; y++ {
 		for x := 0; x < height; x++ {
 			if dir == CCW {
-				result[height-1-x][y] = (*g)[y][x]
+				result[height-1-x][y] = (*w).Grid[y][x]
 			}
 
 			if dir == CW {
-				result[x][height-1-y] = (*g)[y][x]
+				result[x][height-1-y] = (*w).Grid[y][x]
 			}
 		}
 	}
 
-	*g = result
+	(*w).Grid = result
 }
 
-func (g Grid) find(value string) shared.Coord {
+func (w Warehouse) draw() {
+	w.turnToFace(N)
 
-	for y, row := range g {
-		for x := range row {
-			if g[y][x] == value {
+	yMin, yMax := w.Height()-1, 0
+	xMin, xMax := w.Width()-1, 0
 
-				return shared.Coord{X: x, Y: y}
-			}
-		}
-	}
-
-	return shared.Coord{X: -1, Y: -1}
-}
-
-func (g Grid) drawNormal() {
-	g.draw(false)
-}
-
-func (g Grid) drawWide() {
-	g.draw(true)
-}
-
-func (g Grid) draw(wide bool) {
-	yMin, yMax := g.height()-1, 0
-	xMin, xMax := g.width()-1, 0
-
-	for y := range g {
-		for x := range g[y] {
-			if g[y][x] != "." {
+	for y := range w.Height() {
+		for x := range w.Width() {
+			if w.Grid[y][x] != "." {
 				yMin = int(math.Min(float64(yMin), float64(y)))
 				yMax = int(math.Max(float64(yMax), float64(y)))
 				xMin = int(math.Min(float64(xMin), float64(x)))
@@ -275,7 +233,7 @@ func (g Grid) draw(wide bool) {
 
 	var xIncr int
 
-	if wide {
+	if w.wide {
 		xIncr = 2
 	} else {
 		xIncr = 1
@@ -304,12 +262,12 @@ func (g Grid) draw(wide bool) {
 			}
 
 			// print the grid
-			if g.isInGrid(loc) {
+			if w.Contains(loc) {
 				var cell string
-				if wide {
-					cell = g[y][x] + g[y][x+1]
+				if w.wide {
+					cell = w.Grid[y][x] + w.Grid[y][x+1]
 				} else {
-					cell = g[y][x]
+					cell = w.Grid[y][x]
 				}
 
 				switch cell {
@@ -359,14 +317,14 @@ func (w *Warehouse) moveRobot(move string) {
 	}
 
 	var tmp []string
-	robot := w.grid.find(ROBOT)
+	robot := w.Grid.LocationOf(ROBOT)
 	var start int
 
 	if move == LEFT || move == DOWN {
-		tmp = reversed(w.grid[robot.Y])
-		start = w.grid.width() - robot.X - 1
+		tmp = reversed(w.Grid[robot.Y])
+		start = w.Grid.Width() - robot.X - 1
 	} else {
-		tmp = w.grid[robot.Y]
+		tmp = w.Grid[robot.Y]
 		start = robot.X
 	}
 
@@ -392,12 +350,12 @@ func (w *Warehouse) moveRobot(move string) {
 	if move == LEFT || move == DOWN {
 		newRow = reversed(newRow)
 		tmpStart := start
-		start = w.grid.width() - end
-		end = w.grid.width() - tmpStart
+		start = w.Grid.Width() - end
+		end = w.Grid.Width() - tmpStart
 	}
 
 	for x := start; x < end; x++ {
-		(*w).grid[robot.Y][x] = newRow[x-start]
+		(*w).Grid[robot.Y][x] = newRow[x-start]
 	}
 }
 
@@ -419,7 +377,7 @@ func (w Warehouse) canMove(currentLoc shared.Coord, move string) []shared.Coord 
 	nextLoc := shared.Coord{X: currentLoc.X + moveAmt.X, Y: currentLoc.Y + moveAmt.Y}
 
 	// If we're moving left or right, pretend the split boxes are just normal boxes
-	nextLocStr := w.grid[nextLoc.Y][nextLoc.X]
+	nextLocStr := w.Grid[nextLoc.Y][nextLoc.X]
 	if (move == LEFT || move == RIGHT) && (nextLocStr == "[" || nextLocStr == "]") {
 		nextLocStr = "O"
 	}
@@ -494,7 +452,7 @@ func (w Warehouse) canMove(currentLoc shared.Coord, move string) []shared.Coord 
 }
 
 func (w *Warehouse) wideMoveRobot(move string) {
-	robot := w.grid.find(ROBOT)
+	robot := w.Grid.LocationOf(ROBOT)
 	movers := w.canMove(robot, move)
 
 	if len(movers) > 0 {
@@ -514,8 +472,8 @@ func (w *Warehouse) wideMoveRobot(move string) {
 		for _, a := range movers {
 			b := shared.Coord{X: a.X + moveAmt.X, Y: a.Y + moveAmt.Y}
 
-			(*w).grid[b.Y][b.X] = (*w).grid[a.Y][a.X]
-			(*w).grid[a.Y][a.X] = "."
+			(*w).Grid[b.Y][b.X] = (*w).Grid[a.Y][a.X]
+			(*w).Grid[a.Y][a.X] = "."
 		}
 	}
 }
@@ -524,9 +482,9 @@ func (w Warehouse) gpsValue() int {
 	w.turnToFace(N)
 
 	coordSum := 0
-	for y := range w.grid.height() {
-		for x := range w.grid.width() {
-			if w.grid[y][x] == "[" || w.grid[y][x] == BOX {
+	for y := range w.Grid.Height() {
+		for x := range w.Grid.Width() {
+			if w.Grid[y][x] == "[" || w.Grid[y][x] == BOX {
 				coordSum += (100 * y) + x
 			}
 		}

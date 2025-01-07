@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
 func main() {
@@ -37,11 +39,11 @@ func PartOne(input area) int {
 	for {
 		nextLocation := lab.guard.nextLocation()
 
-		if !lab.isInArea(nextLocation.x, nextLocation.y) {
+		if !lab.Contains(nextLocation) {
 			break
 		}
 
-		if lab.isObstructed(nextLocation.x, nextLocation.y) {
+		if lab.isObstructed(nextLocation.X, nextLocation.Y) {
 			lab.guard.turn()
 		} else {
 			lab.guard.move()
@@ -55,14 +57,14 @@ func PartOne(input area) int {
 func PartTwo(input area) int {
 	waysToLoop := 0
 
-	for x := 0; x < len(input.grid[0]); x++ {
-		for y := 0; y < len(input.grid); y++ {
+	for x := 0; x < len(input.Grid[0]); x++ {
+		for y := 0; y < len(input.Grid); y++ {
 			lab := input.copy()
 
 			if lab.isObstructed(x, y) {
 				continue
 			} else {
-				lab.grid[y][x] = "O"
+				lab.Grid[y][x] = "O"
 			}
 
 			causesLoop := false
@@ -70,11 +72,11 @@ func PartTwo(input area) int {
 			for {
 				nextLocation := lab.guard.nextLocation()
 
-				if !lab.isInArea(nextLocation.x, nextLocation.y) {
+				if !lab.Contains(nextLocation) {
 					break
 				}
 
-				if lab.isObstructed(nextLocation.x, nextLocation.y) {
+				if lab.isObstructed(nextLocation.X, nextLocation.Y) {
 					lab.guard.turn()
 				} else {
 					lab.guard.move()
@@ -104,7 +106,7 @@ func readInput(filePath string) area {
 	}
 	defer file.Close()
 
-	grid := [][]string{}
+	grid := shared.Grid{}
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
@@ -114,19 +116,18 @@ func readInput(filePath string) area {
 		grid = append(grid, row)
 	}
 
-	mapArea := area{grid: grid}
+	mapArea := area{Grid: grid}
 	mapArea.locateGuard()
-	mapArea.grid[mapArea.guard.y][mapArea.guard.x] = "h"
+	mapArea.Grid[mapArea.guard.Y][mapArea.guard.X] = "h"
 	return mapArea
 }
 
-type entity struct {
-	x         int
-	y         int
+type Entity struct {
+	shared.Coord
 	direction string
 }
 
-func (e *entity) draw() string {
+func (e *Entity) draw() string {
 	switch e.direction {
 	case "N":
 		return "^"
@@ -138,10 +139,10 @@ func (e *entity) draw() string {
 		return "<"
 	}
 
-	panic("Invalid entity direction")
+	panic("Invalid Entity direction")
 }
 
-func (e *entity) turn() {
+func (e *Entity) turn() {
 	switch e.direction {
 	case "N":
 		e.direction = "E"
@@ -158,56 +159,56 @@ func (e *entity) turn() {
 	}
 }
 
-func (e entity) nextLocation() entity {
+func (e Entity) nextLocation() Entity {
 	switch e.direction {
 	case "N":
-		e.y -= 1
+		e.Y -= 1
 	case "E":
-		e.x += 1
+		e.X += 1
 	case "S":
-		e.y += 1
+		e.Y += 1
 	case "W":
-		e.x -= 1
+		e.X -= 1
 	}
 
 	return e
 }
 
-func (e *entity) move() {
+func (e *Entity) move() {
 	switch e.direction {
 	case "N":
-		e.y -= 1
+		e.Y -= 1
 	case "E":
-		e.x += 1
+		e.X += 1
 	case "S":
-		e.y += 1
+		e.Y += 1
 	case "W":
-		e.x -= 1
+		e.X -= 1
 	}
 }
 
 type area struct {
-	grid  [][]string
-	guard entity
+	shared.Grid
+	guard Entity
 }
 
 func (m area) copy() area {
-	newGrid := make([][]string, len(m.grid))
-	for y, row := range m.grid {
-		newRow := make([]string, len(row))
+	newGrid := make(shared.Grid, m.Grid.Height())
+	for y, row := range m.Grid {
+		newRow := make([]string, m.Grid.Width())
 		copy(newRow, row)
 		newGrid[y] = newRow
 	}
 
-	newGuard := entity{x: m.guard.x, y: m.guard.y, direction: m.guard.direction}
+	newGuard := Entity{Coord: shared.Coord{X: m.guard.X, Y: m.guard.Y}, direction: m.guard.direction}
 
-	return area{grid: newGrid, guard: newGuard}
+	return area{Grid: newGrid, guard: newGuard}
 }
 
 func (m *area) draw() {
-	for y, row := range m.grid {
+	for y, row := range m.Grid {
 		for x, cell := range row {
-			if x == m.guard.x && y == m.guard.y {
+			if x == m.guard.X && y == m.guard.Y {
 				fmt.Print(m.guard.draw())
 			} else {
 				fmt.Print(cell)
@@ -218,17 +219,17 @@ func (m *area) draw() {
 }
 
 func (m *area) locateGuard() {
-	for y, row := range m.grid {
+	for y, row := range m.Grid {
 		for x, cell := range row {
 			switch cell {
 			case "^":
-				m.guard = entity{x: x, y: y, direction: "N"}
+				m.guard = Entity{Coord: shared.Coord{X: x, Y: y}, direction: "N"}
 			case "v":
-				m.guard = entity{x: x, y: y, direction: "S"}
+				m.guard = Entity{Coord: shared.Coord{X: x, Y: y}, direction: "S"}
 			case "<":
-				m.guard = entity{x: x, y: y, direction: "W"}
+				m.guard = Entity{Coord: shared.Coord{X: x, Y: y}, direction: "W"}
 			case ">":
-				m.guard = entity{x: x, y: y, direction: "E"}
+				m.guard = Entity{Coord: shared.Coord{X: x, Y: y}, direction: "E"}
 			}
 		}
 	}
@@ -237,12 +238,12 @@ func (m *area) locateGuard() {
 }
 
 func (m *area) isObstructed(x int, y int) bool {
-	cell := m.grid[y][x]
+	cell := m.Grid[y][x]
 	return cell == "#" || cell == "O"
 }
 
 func (m *area) markVisited() bool {
-	prevChar := m.grid[m.guard.y][m.guard.x]
+	prevChar := m.Grid[m.guard.Y][m.guard.X]
 
 	var prevDirections []string
 
@@ -257,7 +258,7 @@ func (m *area) markVisited() bool {
 	}
 
 	prevDirections = append(prevDirections, m.guard.direction)
-	m.grid[m.guard.y][m.guard.x] = directionsToChar(prevDirections)
+	m.Grid[m.guard.Y][m.guard.X] = directionsToChar(prevDirections)
 
 	return true
 }
@@ -265,7 +266,7 @@ func (m *area) markVisited() bool {
 func (m *area) visitedLocationCount() int {
 	count := 0
 
-	for _, row := range m.grid {
+	for _, row := range m.Grid {
 		for _, cell := range row {
 			if cell != "." && cell != "#" {
 				count += 1
@@ -274,10 +275,6 @@ func (m *area) visitedLocationCount() int {
 	}
 
 	return count
-}
-
-func (m area) isInArea(x int, y int) bool {
-	return x >= 0 && x < len(m.grid) && y >= 0 && y < len(m.grid[0])
 }
 
 func charToDirections(char string) []string {

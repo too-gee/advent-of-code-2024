@@ -13,3 +13,11 @@ func (c Coord) Neighbors() map[string]Coord {
 		"S": {X: c.X, Y: c.Y + 1},
 	}
 }
+
+func (c Coord) GetX() int { return c.X }
+func (c Coord) GetY() int { return c.Y }
+
+type CoordLike interface {
+	GetX() int
+	GetY() int
+}

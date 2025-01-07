@@ -1,10 +1,14 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/too-gee/advent-of-code-2024/shared"
+)
 
 type testCase struct {
 	fileName string
-	function func(Grid, []string) int
+	function func(shared.Grid, []string) int
 	expected int
 }
 
