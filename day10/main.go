@@ -118,10 +118,7 @@ func (m Map) trailHeads() []shared.Coord {
 func (m Map) neighbors(loc shared.Coord) []shared.Coord {
 	neighbors := []shared.Coord{}
 
-	offsets := []shared.Coord{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
-
-	for _, offset := range offsets {
-		candidate := shared.Coord{X: loc.X + offset.X, Y: loc.Y + offset.Y}
+	for _, candidate := range loc.Neighbors() {
 		if m.value(candidate) == m.value(loc)+1 {
 			neighbors = append(neighbors, candidate)
 		}
