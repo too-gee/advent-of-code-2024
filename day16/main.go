@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"container/heap"
 	"fmt"
+	"math"
 	"os"
 	"slices"
 	"strings"
@@ -20,134 +21,125 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	maze := readInput(fileName).fillDeadEnds()
-	maze.draw(map[string][]shared.Coord{})
+	maze := readInput(fileName).FillDeadEnds()
+	maze.DrawCustomMarkers(map[string]string{"=": "🟫", "S": "🟢", "E": "🔴"})
 
 	// part 1
-	cost := PartOne(maze)
-	fmt.Printf("Lowest cost: %d\n", cost)
+	//cost := PartOne(maze)
+	//fmt.Printf("Lowest cost: %d\n", cost)
 
 	// part 2
-	optimalPathCount := PartTwo(maze)
-	fmt.Printf("Optimal path count: %d\n", optimalPathCount)
+	optimalCosts := PartTwo(maze)
+	endLoc := maze.LocationOf(END)
+	endCosts := CostMap{}
+	minCost := math.MaxInt32
+	for _, dir := range []string{"N", "S", "E", "W"} {
+		id := fmt.Sprintf("%d.%d.%s", endLoc.X, endLoc.Y, dir)
+		if cost, ok := optimalCosts[id]; ok {
+			if cost < minCost {
+				endCosts = CostMap{id: cost}
+				minCost = cost
+			} else if cost == minCost {
+				endCosts[id] = cost
+			}
+		}
+	}
+
+	fmt.Printf("Optimal path count: %d\n", len(endCosts))
 }
 
-func PartTwo(g Grid) int {
-	return 0
-}
-
-func readInput(filePath string) Grid {
+func readInput(filePath string) Maze {
 	file, _ := os.Open(filePath)
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
-	grid := Grid{}
+	grid := Maze{}
 
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		gridRow := strings.Split(line, "")
-		grid = append(grid, gridRow)
+		grid.Grid = append(grid.Grid, gridRow)
 	}
 
 	return grid
 }
 
-const FILL = "="
-const WALL = "#"
-const EMPTY = "."
-const START = "S"
-const END = "E"
+type DumbQueue []State
 
-func (g Grid) fillDeadEnds() Grid {
-	for y := range g {
-		for x := range g[0] {
-			loc := shared.Coord{X: x, Y: y}
-			if g.isPassable(loc) && g.isDeadEnd(loc) {
-				g.fillDeadEnd(loc)
-			}
-		}
-	}
+func (q *DumbQueue) push(item State) { *q = append(*q, item) }
 
-	return g
-}
-
-func (g Grid) inGrid(loc shared.Coord) bool {
-	return loc.Y >= 0 &&
-		loc.Y < len(g) &&
-		loc.X >= 0 &&
-		loc.X < len(g[loc.Y])
-}
-
-func (g Grid) cellType(loc shared.Coord) string {
-	return g[loc.Y][loc.X]
-}
-
-func (g Grid) neighbors(loc shared.Coord) map[string]shared.Coord {
-	neighbors := map[string]shared.Coord{}
-
-	for dir, neighbor := range loc.Neighbors() {
-		if g.inGrid(neighbor) &&
-			!slices.Contains([]string{WALL, FILL}, g[neighbor.Y][neighbor.X]) {
-			neighbors[dir] = neighbor
-		}
-	}
-
-	return neighbors
-}
-
-func (g Grid) isPassable(loc shared.Coord) bool {
-	return slices.Contains([]string{EMPTY, START, END}, g[loc.Y][loc.X])
-}
-
-func (g Grid) isDeadEnd(loc shared.Coord) bool {
-	if slices.Contains([]string{START, END}, g[loc.Y][loc.X]) {
-		return false
-	}
-
-	return len(g.neighbors(loc)) == 1
-}
-
-type State struct {
-	loc  shared.Coord
-	dir  string
-	cost int
-	path []shared.Coord
-}
-
-type PriorityQueue []*State
-
-// Impliment a bunch of methods to satisfy the heap interface
-func (q PriorityQueue) Len() int {
-	return len(q)
-}
-
-func (q PriorityQueue) Less(i, j int) bool {
-	return q[i].cost < q[j].cost
-}
-
-func (q PriorityQueue) Swap(i, j int) {
-	q[i], q[j] = q[j], q[i]
-}
-
-func (q *PriorityQueue) Push(x interface{}) {
-	item := x.(*State)
-	*q = append(*q, item)
-}
-
-func (q *PriorityQueue) Pop() interface{} {
-	n := len(*q)
-	item := (*q)[n-1]
-	*q = (*q)[0 : n-1]
+func (q *DumbQueue) pop() State {
+	item := (*q)[len(*q)-1]
+	*q = (*q)[0 : len(*q)-1]
 	return item
 }
 
-type Grid [][]string
+type CostMap map[string]int
 
-func PartOne(g Grid) int {
-	start := g.find(START)
-	end := g.find(END)
+func (c *CostMap) set(metaLoc string, cost int) bool {
+	_, hasKey := (*c)[metaLoc]
+	if !hasKey || (*c)[metaLoc] < cost {
+		(*c)[metaLoc] = cost
+		return true
+	}
+
+	return false
+}
+
+func PartTwo(g Maze) CostMap {
+	start := g.LocationOf(START)
+	end := g.LocationOf(END)
+
+	queue := DumbQueue{}
+	queue.push(State{
+		loc:  start,
+		dir:  "E",
+		cost: 0,
+		path: []shared.Coord{start},
+	})
+
+	costs := CostMap{}
+
+	for len(queue) > 0 {
+		current := queue.pop()
+
+		id := fmt.Sprintf("%d.%d.%s", current.loc.X, current.loc.Y, current.dir)
+		fmt.Printf("Id - %9v :: Cost - %7d :: Queue - %3d\n", id, current.cost, len(queue))
+
+		if !costs.set(id, current.cost) || current.loc == end {
+			continue
+		}
+
+		for newDir, neighbor := range g.Neighbors(current.loc) {
+			if slices.Contains(current.path, neighbor) {
+				continue
+			}
+
+			newCost := current.cost + 1
+
+			if newDir != current.dir {
+				newCost += 1000
+			}
+
+			newPath := append(current.path, neighbor)
+
+			queue.push(State{
+				loc:  neighbor,
+				dir:  newDir,
+				cost: newCost,
+				path: newPath,
+			})
+		}
+	}
+
+	return costs
+}
+
+func PartOne(m Maze) int {
+	start := m.LocationOf(START)
+	end := m.LocationOf(END)
 
 	queue := PriorityQueue{}
 	heap.Init(&queue)
@@ -160,11 +152,7 @@ func PartOne(g Grid) int {
 
 	visited := map[string]bool{}
 
-	for {
-		if queue.Len() == 0 {
-			break
-		}
-
+	for queue.Len() > 0 {
 		current := heap.Pop(&queue).(*State)
 
 		if current.loc == end {
@@ -179,7 +167,7 @@ func PartOne(g Grid) int {
 			visited[id] = true
 		}
 
-		for newDir, neighbor := range g.neighbors(current.loc) {
+		for newDir, neighbor := range m.Neighbors(current.loc) {
 			newCost := current.cost + 1
 
 			if newDir != current.dir {
@@ -198,56 +186,4 @@ func PartOne(g Grid) int {
 	}
 
 	return -1
-}
-
-func (g Grid) draw(paths map[string][]shared.Coord) {
-	for y := range g {
-		for x := range g[y] {
-			drawLoc := shared.Coord{X: x, Y: y}
-
-			drawn := false
-
-			for symbol, path := range paths {
-				if slices.Contains(path, drawLoc) {
-					fmt.Print(symbol)
-					drawn = true
-					break
-				}
-			}
-
-			if !drawn {
-				fmt.Print(g[y][x])
-			}
-		}
-		fmt.Println()
-	}
-}
-
-func (g Grid) find(value string) shared.Coord {
-
-	for y, row := range g {
-		for x := range row {
-			if g[y][x] == value {
-
-				return shared.Coord{X: x, Y: y}
-			}
-		}
-	}
-
-	return shared.Coord{X: -1, Y: -1}
-}
-
-func (g *Grid) fillDeadEnd(loc shared.Coord) {
-	for {
-		neighbors := (*g).neighbors(loc)
-
-		if len(neighbors) != 1 || (*g)[loc.Y][loc.X] == START {
-			break
-		}
-
-		for _, neighbor := range neighbors {
-			(*g)[loc.Y][loc.X] = FILL
-			loc = neighbor
-		}
-	}
 }
