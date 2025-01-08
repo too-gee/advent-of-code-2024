@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"math"
 	"os"
 	"strings"
 
@@ -96,108 +95,6 @@ func makeGrid(width int, height int) shared.Grid {
 type Region struct {
 	plantType string
 	shared.Grid
-}
-
-func (r Region) draw() {
-	r.drawWithMarkers(map[shared.Coord]string{})
-}
-
-func (r Region) drawWithMarkers(markers map[shared.Coord]string) {
-	yMin, yMax := r.Height()-1, 0
-	xMin, xMax := r.Width()-1, 0
-
-	for y := range r.Height() {
-		for x := range r.Width() {
-			if r.Grid[y][x] != "." {
-				yMin = int(math.Min(float64(yMin), float64(y)))
-				yMax = int(math.Max(float64(yMax), float64(y)))
-				xMin = int(math.Min(float64(xMin), float64(x)))
-				xMax = int(math.Max(float64(xMax), float64(x)))
-			}
-		}
-	}
-
-	output := ""
-
-	borderThickness := 1
-	bufferThickness := 1
-
-	for y := yMin - borderThickness - bufferThickness; y <= yMax+borderThickness+bufferThickness; y++ {
-		for x := xMin - borderThickness - bufferThickness; x <= xMax+borderThickness+bufferThickness; x++ {
-			loc := shared.Coord{X: x, Y: y}
-
-			// print the border
-			if x >= xMin-borderThickness-bufferThickness && x < xMin-bufferThickness ||
-				(y >= yMin-borderThickness-bufferThickness && y < yMin-bufferThickness) ||
-				(x > xMax+bufferThickness && x <= xMax+borderThickness+bufferThickness) ||
-				(y > yMax+bufferThickness && y <= yMax+borderThickness+bufferThickness) {
-				output += "██"
-				continue
-			}
-
-			// print a buffer
-			if (x >= xMin-borderThickness && x < xMin) ||
-				(y >= yMin-borderThickness && y < yMin) ||
-				(x > xMax && x <= xMax+bufferThickness) ||
-				(y > yMax && y <= yMax+bufferThickness) {
-				output += "　"
-				continue
-			}
-
-			// print a loc marker
-			if marker, ok := markers[loc]; ok {
-				output += marker
-				continue
-			}
-
-			// print the rest of the grid
-			if r.Contains(loc) {
-				switch r.Grid[y][x] {
-				case ".":
-					output += "　"
-				case "@":
-					output += "⏺️ "
-				case "x":
-					output += "🟦"
-				case "A":
-					output += "❤️"
-				case "B":
-					output += "💛"
-				case "C":
-					output += "💚"
-				case "D":
-					output += "💙"
-				case "E":
-					output += "🤎"
-				case "F":
-					output += "🩶"
-				case "G":
-					output += "🟠"
-				case "H":
-					output += "🟣"
-				case "I":
-					output += "⚫"
-				case "J":
-					output += "⚪"
-				case "K":
-					output += "🟥"
-				case "L":
-					output += "🟨"
-				case "M":
-					output += "🟩"
-				case "N":
-					output += "🟦"
-				case "O":
-					output += "🟫"
-				default:
-					output += r.Grid[y][x] + r.Grid[y][x]
-				}
-			}
-		}
-		output += "\n"
-	}
-
-	fmt.Print(output)
 }
 
 func (r Region) measure() (int, int) {
