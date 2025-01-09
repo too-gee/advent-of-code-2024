@@ -125,3 +125,15 @@ func (g Grid) Draw(markers map[string]string, paths map[string][]Coord) {
 		fmt.Println()
 	}
 }
+
+func (g Grid) Neighbors(loc Coord, blockers []string) map[string]Coord {
+	neighbors := map[string]Coord{}
+
+	for dir, neighbor := range loc.Neighbors() {
+		if g.Contains(neighbor) && !slices.Contains(blockers, g[neighbor.Y][neighbor.X]) {
+			neighbors[dir] = neighbor
+		}
+	}
+
+	return neighbors
+}

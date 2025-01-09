@@ -2,9 +2,6 @@ package main
 
 import (
 	"bufio"
-	"container/heap"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"os"
@@ -23,9 +20,9 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	maze := readInput(fileName).FillDeadEnds()
-	maze.Draw(map[string]string{"=": "🟫", "S": "🟢", "E": "🔴"}, nil)
+	maze := readInput(fileName)
 
+	// part 1 & 2
 	bestCost, optimalTiles := Solve(maze)
 	fmt.Printf("Lowest cost: %d\n", bestCost)
 	fmt.Printf("Optimal path count: %d\n", optimalTiles)
@@ -49,24 +46,12 @@ func readInput(filePath string) Maze {
 	return grid
 }
 
-type DumbQueue []State
-
-func (q *DumbQueue) push(item State) { *q = append(*q, item) }
-
-func (q *DumbQueue) pop() State {
-	item := (*q)[len(*q)-1]
-	*q = (*q)[0 : len(*q)-1]
-	return item
-}
-
 func Solve(m Maze) (int, int) {
 	start := m.LocationOf(START)
 	end := m.LocationOf(END)
 
 	queue := DumbQueue{}
 	queue.push(State{
-		id:   "start",
-		loc:  start,
 		dir:  "E",
 		cost: 0,
 		path: []shared.Coord{start},
@@ -74,69 +59,50 @@ func Solve(m Maze) (int, int) {
 
 	bestCost := math.MaxInt
 	visitedCost := map[shared.Coord]int{}
-	bestPaths := map[string][]shared.Coord{}
+	bestPaths := [][]shared.Coord{}
 
 	for len(queue) > 0 {
 		current := queue.pop()
 
-		localBestCost, ok := visitedCost[current.loc]
+		// fill a cost grid (not checking direction)
+		localBestCost, ok := visitedCost[current.Loc()]
 
 		if !ok || current.cost < localBestCost {
-			visitedCost[current.loc] = current.cost
+			visitedCost[current.Loc()] = current.cost
 			localBestCost = current.cost
 		}
 
+		// if another path has crossed here with a much lower cost, skip
 		if current.cost > bestCost || current.cost > (localBestCost+1000) {
 			continue
 		}
 
-		if current.loc == end {
-			if !strings.HasSuffix(current.id, fmt.Sprintf("[%d,%d]", current.loc.X, current.loc.Y)) {
-				current.id = fmt.Sprintf("%s -> [%d,%d]", current.id, current.loc.X, current.loc.Y)
-			}
-
+		// if we're at the end, save and continue
+		if current.Loc() == end {
 			if current.cost < bestCost {
-				bestPaths = map[string][]shared.Coord{current.id: current.path}
+				bestPaths = [][]shared.Coord{current.path}
 				bestCost = current.cost
 			} else if current.cost == bestCost {
-				bestPaths[current.id] = current.path
+				bestPaths = append(bestPaths, current.path)
 			}
 			continue
 		}
 
-		// This could be done in the loop below but this makes debugging easier
-		neighbors := m.Neighbors(current.loc)
-		newNeighbors := map[string]shared.Coord{}
-		for newDir, neighbor := range neighbors {
-			if !slices.Contains(current.path, neighbor) {
-				newNeighbors[newDir] = neighbor
+		for newDir, neighbor := range m.Neighbors(current.Loc()) {
+			if slices.Contains(current.path, neighbor) {
+				continue
 			}
-		}
 
-		for newDir, neighbor := range newNeighbors {
 			newCost := current.cost + 1
 
 			if newDir != current.dir {
 				newCost += 1000
 			}
 
-			newPath := CopyAppend(current.path, neighbor)
-
-			var newId string
-			if len(newNeighbors) > 1 {
-				newId = fmt.Sprintf("%s -> [%d,%d]", current.id, current.loc.X, current.loc.Y)
-			} else if newDir != current.dir {
-				newId = fmt.Sprintf("%s -> [%d,%d]", current.id, current.loc.X, current.loc.Y)
-			} else {
-				newId = current.id
-			}
-
 			queue.push(State{
-				id:   newId,
-				loc:  neighbor,
 				dir:  newDir,
 				cost: newCost,
-				path: newPath,
+				path: CopyAppend(current.path, neighbor),
 			})
 		}
 	}
@@ -150,75 +116,9 @@ func Solve(m Maze) (int, int) {
 		}
 	}
 
-	m.Draw(map[string]string{"=": "🟫", "S": "🟢", "E": "🔴"}, map[string][]shared.Coord{"⏺️ ": bestTiles})
+	m.Draw(map[string]string{"S": "🟢", "E": "🔴"}, map[string][]shared.Coord{"⏺️ ": bestTiles})
 
 	return bestCost, len(bestTiles)
-}
-
-func PartOne(m Maze) int {
-	start := m.LocationOf(START)
-	end := m.LocationOf(END)
-
-	queue := PriorityQueue{}
-	heap.Init(&queue)
-	heap.Push(&queue, &State{
-		loc:  start,
-		dir:  "E",
-		cost: 0,
-		path: []shared.Coord{start},
-	})
-
-	visited := map[string]bool{}
-
-	for queue.Len() > 0 {
-		current := heap.Pop(&queue).(*State)
-
-		if current.loc == end {
-			return current.cost
-		}
-
-		id := fmt.Sprintf("%d.%d.%s", current.loc.X, current.loc.Y, current.dir)
-
-		if visited[id] {
-			continue
-		} else {
-			visited[id] = true
-		}
-
-		for newDir, neighbor := range m.Neighbors(current.loc) {
-			newCost := current.cost + 1
-
-			if newDir != current.dir {
-				newCost += 1000
-			}
-
-			newPath := append(current.path, neighbor)
-
-			heap.Push(&queue, &State{
-				loc:  neighbor,
-				dir:  newDir,
-				cost: newCost,
-				path: newPath,
-			})
-		}
-	}
-
-	return -1
-}
-
-func generateUUID() (string, error) {
-	uuid := make([]byte, 16)
-	_, err := rand.Read(uuid)
-	if err != nil {
-		return "", err
-	}
-
-	// Set the version bits to 4
-	uuid[6] = (uuid[6] & 0x0f) | 0x40
-	// Set the variant bits to RFC 4122
-	uuid[8] = (uuid[8] & 0x3f) | 0x80
-
-	return hex.EncodeToString(uuid), nil
 }
 
 func CopyAppend(a []shared.Coord, b shared.Coord) []shared.Coord {
@@ -227,4 +127,38 @@ func CopyAppend(a []shared.Coord, b shared.Coord) []shared.Coord {
 	newSlice[len(a)] = b
 
 	return newSlice
+}
+
+const FILL = "="
+const WALL = "#"
+const EMPTY = "."
+const START = "S"
+const END = "E"
+
+type Maze struct {
+	shared.Grid
+}
+
+func (m Maze) Neighbors(loc shared.Coord) map[string]shared.Coord {
+	return m.Grid.Neighbors(loc, []string{WALL, FILL})
+}
+
+type State struct {
+	dir  string
+	cost int
+	path []shared.Coord
+}
+
+func (s State) Loc() shared.Coord {
+	return s.path[len(s.path)-1]
+}
+
+type DumbQueue []State
+
+func (q *DumbQueue) push(item State) { *q = append(*q, item) }
+
+func (q *DumbQueue) pop() State {
+	item := (*q)[len(*q)-1]
+	*q = (*q)[0 : len(*q)-1]
+	return item
 }
