@@ -1,7 +1,5 @@
 # Day 14: Restroom Redoubt
 
-## Part 1
-
 One of The Historians needs to use the bathroom; fortunately, you know there's a bathroom near an unvisited location on their list, and so you're all quickly teleported directly to the lobby of Easter Bunny Headquarters.
 
 Unfortunately, EBHQ seems to have "improved" bathroom security **again** after your last [visit](https://adventofcode.com/2016/day/2). The area outside the bathroom is swarming with robots!

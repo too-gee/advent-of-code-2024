@@ -1,7 +1,5 @@
 # Day 16: Reindeer Maze
 
-## Part 1
-
 It's time again for the [Reindeer Olympics](https://adventofcode.com/2015/day/14)! This year, the big event is the **Reindeer Maze**, where the Reindeer compete for the **lowest score**.
 
 You and The Historians arrive to search for the Chief right as the event is about to start. It wouldn't hurt to watch a little, right?

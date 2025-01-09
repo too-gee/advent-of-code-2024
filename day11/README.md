@@ -1,7 +1,5 @@
 # Day 11: Plutonian Pebbles
 
-## Part 1
-
 The ancient civilization on [Pluto](https://adventofcode.com/2019/day/20) was known for its ability to manipulate spacetime, and while The Historians explore their infinite corridors, you've noticed a strange set of physics-defying stones.
 
 At first glance, they seem like normal stones: they're arranged in a **perfectly straight** line, and each stone has a **number** engraved on it.

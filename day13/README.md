@@ -1,7 +1,5 @@
 # Day 13: Claw Contraption
 
-## Part 1
-
 Next up: the [lobby](https://adventofcode.com/2020/day/24) of a resort on a tropical island. The Historians take a moment to admire the hexagonal floor tiles before spreading out.
 
 Fortunately, it looks like the resort has a new [arcade](https://en.wikipedia.org/wiki/Amusement_arcade)! Maybe you can win some prizes from the [claw machines](https://en.wikipedia.org/wiki/Claw_machine)?
