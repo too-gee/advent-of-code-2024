@@ -3,6 +3,7 @@ package main
 import "github.com/too-gee/advent-of-code-2024/shared"
 
 type State struct {
+	id   string
 	loc  shared.Coord
 	dir  string
 	cost int

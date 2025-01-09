@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"math"
+	"slices"
 )
 
 type Grid [][]string
@@ -42,13 +43,17 @@ func (g Grid) LocationOf(value string) Coord {
 	return Coord{X: -1, Y: -1}
 }
 
-func (g Grid) Draw() {
-	g.DrawCustomMarkers(map[string]string{})
-}
-
-func (g Grid) DrawCustomMarkers(markers map[string]string) {
+func (g Grid) Draw(markers map[string]string, paths map[string][]Coord) {
 	if g == nil {
 		return
+	}
+
+	if markers == nil {
+		markers = map[string]string{}
+	}
+
+	if paths == nil {
+		paths = map[string][]Coord{}
 	}
 
 	yMin, yMax := g.Height()-1, 0
@@ -89,6 +94,17 @@ func (g Grid) DrawCustomMarkers(markers map[string]string) {
 
 			// print the grid
 			if g.Contains(loc) {
+				pathPrint := false
+				for cell, path := range paths {
+					if slices.Contains(path, loc) {
+						fmt.Print(cell)
+						pathPrint = true
+					}
+				}
+				if pathPrint {
+					continue
+				}
+
 				cell, ok := markers[g[y][x]]
 
 				if ok {
