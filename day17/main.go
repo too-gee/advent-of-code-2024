@@ -126,6 +126,7 @@ func (s *State) bdv(comboOperand int) {
 	denominator := math.Pow(2, float64(operand))
 
 	(*s).RegisterB = int(math.Trunc(numerator / denominator))
+	(*s).Pointer += 2
 }
 
 // OPCODE 7
@@ -135,6 +136,7 @@ func (s *State) cdv(comboOperand int) {
 	denominator := math.Pow(2, float64(operand))
 
 	(*s).RegisterC = int(math.Trunc(numerator / denominator))
+	(*s).Pointer += 2
 }
 
 func Solve(registers []int, program []int) ([]int, string) {

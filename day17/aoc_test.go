@@ -17,6 +17,7 @@ func TestAll(t *testing.T) {
 		{"input_small_bxl.txt", Solve, []int{0, 26, 0}, ""},
 		{"input_small_bxc.txt", Solve, []int{0, 44354, 43690}, ""},
 		{"input_small.txt", Solve, []int{0, 0, 0}, "4,6,3,5,6,3,5,2,1,0"},
+		{"input.txt", Solve, []int{0, 7, 0}, "4,1,5,3,1,5,3,5,7"},
 	}
 
 	for _, c := range cases {
