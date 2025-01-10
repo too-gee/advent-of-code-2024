@@ -84,14 +84,8 @@ func (s *State) adv(comboOperand int) {
 
 // OPCODE 1
 func (s *State) bxl(operand int) {
-	fmt.Println("START")
-	fmt.Printf("Register B: %d\n", s.RegisterB)
-	fmt.Printf("Operand: %d\n", operand)
-	fmt.Printf("Register B ^ Operand: %d\n", s.RegisterB^operand)
 	(*s).RegisterB ^= operand
-	fmt.Printf("Register B: %d\n", s.RegisterB)
 	(*s).Pointer += 2
-	fmt.Println("END")
 }
 
 // OPCODE 2
