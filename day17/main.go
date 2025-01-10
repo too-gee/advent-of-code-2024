@@ -19,11 +19,14 @@ func main() {
 	}
 
 	registers, program := readInput(fileName)
-	fmt.Println(program)
-	registers, output := Solve(registers, program)
-	fmt.Println(registers)
-	fmt.Println(output)
 
+	// Part 1
+	registers, output := Execute(registers, program)
+	fmt.Printf("Part 1: registers - %v, output - %s\n", registers, output)
+
+	// Part 2
+	registers, output = SlidingExecute(registers, program)
+	fmt.Printf("Part 2: registers - %v, Initial Register A - %s\n", registers, output)
 }
 
 func readInput(filePath string) ([]int, []int) {
@@ -139,7 +142,25 @@ func (s *State) cdv(comboOperand int) {
 	(*s).Pointer += 2
 }
 
-func Solve(registers []int, program []int) ([]int, string) {
+func SlidingExecute(registers []int, program []int) ([]int, string) {
+	for i := 0; i < math.MaxInt32; i++ {
+		newRegisters, output := Execute([]int{i, registers[1], registers[2]}, program)
+
+		expectedOutput := ""
+		for _, part := range program {
+			expectedOutput += strconv.Itoa(part)
+			expectedOutput += ","
+		}
+		expectedOutput = expectedOutput[:len(expectedOutput)-1]
+
+		if output == expectedOutput {
+			return newRegisters, strconv.Itoa(i)
+		}
+	}
+	panic("No solution found!")
+}
+
+func Execute(registers []int, program []int) ([]int, string) {
 	state := State{
 		Program: program,
 		Pointer: 0,
