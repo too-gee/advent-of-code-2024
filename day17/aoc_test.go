@@ -18,8 +18,8 @@ func TestAll(t *testing.T) {
 		{"input_small_bxc.txt", Part1, []int64{0, 44354, 43690}, ""},
 		{"input_small.txt", Part1, []int64{0, 0, 0}, "4,6,3,5,6,3,5,2,1,0"},
 		{"input.txt", Part1, []int64{0, 7, 0}, "4,1,5,3,1,5,3,5,7"},
-		{"input_small_quine.txt", SlidingExecute, []int64{0, 0, 0}, "117440"},
-		{"input.txt", SlidingExecute, []int64{0, 0, 0}, "164542125272765"},
+		{"input_small_quine.txt", Part2, []int64{0, 0, 0}, "117440"},
+		{"input.txt", Part2, []int64{0, 0, 0}, "164542125272765"},
 	}
 
 	for _, c := range cases {

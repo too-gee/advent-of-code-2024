@@ -25,7 +25,7 @@ func main() {
 	fmt.Printf("Part 1: registers - %v, output - %s\n", registers, output)
 
 	// Part 2
-	registers, output = SlidingExecute(registers, program)
+	registers, output = Part2(registers, program)
 	fmt.Printf("Part 2: registers - %v, Initial Register A - %s\n", registers, output)
 }
 
@@ -99,13 +99,6 @@ func (s *State) Execute() {
 
 func (s State) RenderOutput() string {
 	return strings.Join(IntsToStrings(s.Output), ",")
-}
-
-func (s State) GetOutput(a int64) string {
-	s.RegisterA = a
-	s.Execute()
-
-	return s.RenderOutput()
 }
 
 func (s State) DebugOutput(a int64, msg string, compare []int) []int {
@@ -196,7 +189,7 @@ func (s *State) cdv(comboOperand int) {
 	(*s).Pointer += 2
 }
 
-func SlidingExecute(registers []int64, program []int) ([]int64, string) {
+func Part2(registers []int64, program []int) ([]int64, string) {
 	floor := RegisterAForLength(len(program), registers, program)
 	ceiling := RegisterAForLength(len(program)+1, registers, program)-1
 
@@ -216,35 +209,38 @@ func SlidingExecute(registers []int64, program []int) ([]int64, string) {
 
 	fmt.Println("--------------")
 
-	
+	registerA := FindMatch(state, floor)
 
-	FindMatch(state, floor, 8, 0)
-	
-
-
-
-
-	return []int64{}, ""
+	return []int64{0,0,0}, strconv.FormatInt(registerA, 10)
 }
 
-func FindMatch(state State, start int64, descSpeed int, stopAt int) []int {
+/*
+	Once you realize that the program output acts like an odometer (hopefully, mine did)
+	and increases sequentially, you can jump ahead to find when each digit rolls over.
+	This was easier for me than reverse engineering the program. In order to run in a
+	reasonable amount of time, this had to be tuned a bunch. I ended up with the numbers
+	here after a bunch of trial and error to reduce the number of iterations. If the
+	parameters are wrong, the process will overshoot on fast iterations and waste time
+	catching up on slow iterations. This approach runs several hundred million times
+	faster than a fully naive approach. On my machine, that's the difference between
+	~10 seconds and ~40 years.
+*/
+func FindMatch(state State, start int64) int64 {
 	places := octalPlaces(start)
-	bookmark := start
 
+	bookmark := start
 	registerA := start
+
 	var output []int
 	var inc int64
 
-	ops := make([]int, places)
-
-	for i := places-1; i >= stopAt; i-- {
+	for i := places-1; i >= 0; i-- {
 		inc = int64(math.Pow(8, float64(i)))
 
 		for {
 			registerA += inc
 
 			output = state.DebugOutput(registerA, fmt.Sprintf("digit: %d, speed: %d", i, inc), state.Program)
-			ops[i]++
 
 			match := Compare(output[i:], state.Program[i:])
 			tooBig := octalPlaces(registerA) > places
@@ -263,36 +259,26 @@ func FindMatch(state State, start int64, descSpeed int, stopAt int) []int {
 					inc = 0
 					continue
 				} else {
-					inc /= int64(descSpeed)
+					inc /= 8
 				}
 			}
 
-			fmt.Printf("output: %v%v, program: %v%v\n", output[:i], output[i:], state.Program[:i], state.Program[i:])
 			if inc == 0 { break }
 		}
 
 		registerA = bookmark
-		fmt.Println("---------------------------------------------------")
-		state.DebugOutput(registerA, "Advancing!", state.Program)
-		fmt.Println("---------------------------------------------------")
 
-		if Compare(output, state.Program) {
-			fmt.Println("SUCCESS")
-			fmt.Println("---------------------------------------------------")
-			ops = append(ops, 0)
-			return ops
-		}
+		if Compare(output, state.Program) { break }
 	}
 
-	ops = append(ops, -1)
-	return ops
+	return registerA
 }
 
 func RegisterAForLength(length int, registers []int64, program []int) int64 {
 	var registerA int64
 	registerA = 0
 
-	inc := int64(math.Pow(8, 10))
+	inc := int64(math.Pow(8, 20))
 
 	state := State{
 		Program: program,
@@ -304,7 +290,7 @@ func RegisterAForLength(length int, registers []int64, program []int) int64 {
 	}
 
 	for ; inc >= 1; registerA += inc {
-		output := strings.ReplaceAll(state.GetOutput(registerA), ",", "")
+		output := state.DebugOutput(registerA, "finding length", nil)
 
 		if len(output) >= length {
 			registerA = int64(math.Max(float64(registerA-inc),0))
