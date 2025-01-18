@@ -4,21 +4,22 @@ import "testing"
 
 type testCase struct {
 	fileName          string
-	function          func([]int, []int) ([]int, string)
-	expectedRegisters []int
+	function          func([]int64, []int) ([]int64, string)
+	expectedRegisters []int64
 	expectedOutput    string
 }
 
 func TestAll(t *testing.T) {
 	cases := []testCase{
-		{"input_small_bst.txt", Execute, []int{0, 1, 9}, ""},
-		{"input_small_out.txt", Execute, []int{10, 0, 0}, "0,1,2"},
-		{"input_small_adv.txt", Execute, []int{0, 0, 0}, "4,2,5,6,7,7,7,7,3,1,0"},
-		{"input_small_bxl.txt", Execute, []int{0, 26, 0}, ""},
-		{"input_small_bxc.txt", Execute, []int{0, 44354, 43690}, ""},
-		{"input_small.txt", Execute, []int{0, 0, 0}, "4,6,3,5,6,3,5,2,1,0"},
-		{"input.txt", Execute, []int{0, 7, 0}, "4,1,5,3,1,5,3,5,7"},
-		{"input_small_quine.txt", SlidingExecute, []int{0, 0, 0}, "117440"},
+		{"input_small_bst.txt", Part1, []int64{0, 1, 9}, ""},
+		{"input_small_out.txt", Part1, []int64{10, 0, 0}, "0,1,2"},
+		{"input_small_adv.txt", Part1, []int64{0, 0, 0}, "4,2,5,6,7,7,7,7,3,1,0"},
+		{"input_small_bxl.txt", Part1, []int64{0, 26, 0}, ""},
+		{"input_small_bxc.txt", Part1, []int64{0, 44354, 43690}, ""},
+		{"input_small.txt", Part1, []int64{0, 0, 0}, "4,6,3,5,6,3,5,2,1,0"},
+		{"input.txt", Part1, []int64{0, 7, 0}, "4,1,5,3,1,5,3,5,7"},
+		{"input_small_quine.txt", SlidingExecute, []int64{0, 0, 0}, "117440"},
+		{"input.txt", SlidingExecute, []int64{0, 0, 0}, "164542125272765"},
 	}
 
 	for _, c := range cases {

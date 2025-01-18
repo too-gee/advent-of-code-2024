@@ -21,7 +21,7 @@ func main() {
 	registers, program := readInput(fileName)
 
 	// Part 1
-	registers, output := Execute(registers, program)
+	registers, output := Part1(registers, program)
 	fmt.Printf("Part 1: registers - %v, output - %s\n", registers, output)
 
 	// Part 2
@@ -29,13 +29,13 @@ func main() {
 	fmt.Printf("Part 2: registers - %v, Initial Register A - %s\n", registers, output)
 }
 
-func readInput(filePath string) ([]int, []int) {
+func readInput(filePath string) ([]int64, []int) {
 	file, _ := os.Open(filePath)
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
-	var a, b, c int
+	var a, b, c int64
 	var program []int
 
 	for scanner.Scan() {
@@ -57,22 +57,76 @@ func readInput(filePath string) ([]int, []int) {
 		}
 	}
 
-	return []int{a, b, c}, program
+	return []int64{a, b, c}, program
 }
 
 type State struct {
 	Program []int
 	Pointer int
 
-	RegisterA int
-	RegisterB int
-	RegisterC int
+	RegisterA int64
+	RegisterB int64
+	RegisterC int64
 
-	Output []string
+	Output []int
+}
+
+func (s *State) Execute() {
+	for (*s).Pointer < len((*s).Program) {
+		opcode := (*s).Program[(*s).Pointer]
+		operand := (*s).Program[(*s).Pointer+1]
+
+		switch opcode {
+			case 0:
+				(*s).adv(operand)
+			case 1:
+				(*s).bxl(operand)
+			case 2:
+				(*s).bst(operand)
+			case 3:
+				(*s).jnz(operand)
+			case 4:
+				(*s).bxc(operand)
+			case 5:
+				(*s).out(operand)
+			case 6:
+				(*s).bdv(operand)
+			case 7:
+				(*s).cdv(operand)
+		}
+	}
 }
 
 func (s State) RenderOutput() string {
-	return strings.Join(s.Output, ",")
+	return strings.Join(IntsToStrings(s.Output), ",")
+}
+
+func (s State) GetOutput(a int64) string {
+	s.RegisterA = a
+	s.Execute()
+
+	return s.RenderOutput()
+}
+
+func (s State) DebugOutput(a int64, msg string, compare []int) []int {
+	s.RegisterA = a
+	s.Execute()
+
+	aOctal := strconv.FormatInt(int64(a), 8)
+
+	display := "["
+	for i, digit := range s.Output {
+		if len(compare) == len(s.Output) && digit != compare[i] {
+			display += fmt.Sprintf("«%s»", strconv.Itoa(digit))
+		} else {
+			display += fmt.Sprintf(" %s ", strconv.Itoa(digit))
+		}
+	}
+	display += "]"
+
+	fmt.Printf("%-15s @ %15d / %19s: %v\n", msg, a, fmt.Sprintf("0o%s" ,aOctal), display)
+
+	return s.Output
 }
 
 // OPCODE 0
@@ -81,20 +135,20 @@ func (s *State) adv(comboOperand int) {
 	numerator := float64((*s).RegisterA)
 	denominator := math.Pow(2, float64(operand))
 
-	(*s).RegisterA = int(math.Trunc(numerator / denominator))
+	(*s).RegisterA = int64(math.Trunc(numerator / denominator))
 	(*s).Pointer += 2
 }
 
 // OPCODE 1
 func (s *State) bxl(operand int) {
-	(*s).RegisterB ^= operand
+	(*s).RegisterB ^= int64(operand)
 	(*s).Pointer += 2
 }
 
 // OPCODE 2
 func (s *State) bst(comboOperand int) {
 	operand := (*s).ResolveComboOperand(comboOperand)
-	(*s).RegisterB = operand % 8
+	(*s).RegisterB = int64(operand % 8)
 	(*s).Pointer += 2
 }
 
@@ -117,8 +171,8 @@ func (s *State) bxc(operand int) {
 // OPCODE 5
 func (s *State) out(comboOperand int) {
 	operand := (*s).ResolveComboOperand(comboOperand)
-	result := operand % 8
-	(*s).Output = append((*s).Output, strconv.Itoa(result))
+	result := int(operand % 8)
+	(*s).Output = append((*s).Output, result)
 	(*s).Pointer += 2
 }
 
@@ -128,7 +182,7 @@ func (s *State) bdv(comboOperand int) {
 	numerator := float64((*s).RegisterA)
 	denominator := math.Pow(2, float64(operand))
 
-	(*s).RegisterB = int(math.Trunc(numerator / denominator))
+	(*s).RegisterB = int64(math.Trunc(numerator / denominator))
 	(*s).Pointer += 2
 }
 
@@ -138,29 +192,130 @@ func (s *State) cdv(comboOperand int) {
 	numerator := float64((*s).RegisterA)
 	denominator := math.Pow(2, float64(operand))
 
-	(*s).RegisterC = int(math.Trunc(numerator / denominator))
+	(*s).RegisterC = int64(math.Trunc(numerator / denominator))
 	(*s).Pointer += 2
 }
 
-func SlidingExecute(registers []int, program []int) ([]int, string) {
-	for i := 0; i < math.MaxInt32; i++ {
-		newRegisters, output := Execute([]int{i, registers[1], registers[2]}, program)
+func SlidingExecute(registers []int64, program []int) ([]int64, string) {
+	floor := RegisterAForLength(len(program), registers, program)
+	ceiling := RegisterAForLength(len(program)+1, registers, program)-1
 
-		expectedOutput := ""
-		for _, part := range program {
-			expectedOutput += strconv.Itoa(part)
-			expectedOutput += ","
-		}
-		expectedOutput = expectedOutput[:len(expectedOutput)-1]
-
-		if output == expectedOutput {
-			return newRegisters, strconv.Itoa(i)
-		}
+	state := State{
+		Program: program,
+		Pointer: 0,
+		RegisterA: registers[0],
+		RegisterB: registers[1],
+		RegisterC: registers[2],
+		Output: []int{},
 	}
-	panic("No solution found!")
+
+	state.DebugOutput(floor - 1, "low-miss", nil)
+	state.DebugOutput(floor, "floor", nil)
+	state.DebugOutput(ceiling, "ceiling", nil)
+	state.DebugOutput(ceiling + 1, "high-miss", nil)
+
+	fmt.Println("--------------")
+
+	
+
+	FindMatch(state, floor, 8, 0)
+	
+
+
+
+
+	return []int64{}, ""
 }
 
-func Execute(registers []int, program []int) ([]int, string) {
+func FindMatch(state State, start int64, descSpeed int, stopAt int) []int {
+	places := octalPlaces(start)
+	bookmark := start
+
+	registerA := start
+	var output []int
+	var inc int64
+
+	ops := make([]int, places)
+
+	for i := places-1; i >= stopAt; i-- {
+		inc = int64(math.Pow(8, float64(i)))
+
+		for {
+			registerA += inc
+
+			output = state.DebugOutput(registerA, fmt.Sprintf("digit: %d, speed: %d", i, inc), state.Program)
+			ops[i]++
+
+			match := Compare(output[i:], state.Program[i:])
+			tooBig := octalPlaces(registerA) > places
+
+			if tooBig || match {
+				if tooBig {
+					registerA = bookmark
+				}
+
+				if match {
+					bookmark = registerA
+					registerA -= inc
+				}
+
+				if inc == 1 {
+					inc = 0
+					continue
+				} else {
+					inc /= int64(descSpeed)
+				}
+			}
+
+			fmt.Printf("output: %v%v, program: %v%v\n", output[:i], output[i:], state.Program[:i], state.Program[i:])
+			if inc == 0 { break }
+		}
+
+		registerA = bookmark
+		fmt.Println("---------------------------------------------------")
+		state.DebugOutput(registerA, "Advancing!", state.Program)
+		fmt.Println("---------------------------------------------------")
+
+		if Compare(output, state.Program) {
+			fmt.Println("SUCCESS")
+			fmt.Println("---------------------------------------------------")
+			ops = append(ops, 0)
+			return ops
+		}
+	}
+
+	ops = append(ops, -1)
+	return ops
+}
+
+func RegisterAForLength(length int, registers []int64, program []int) int64 {
+	var registerA int64
+	registerA = 0
+
+	inc := int64(math.Pow(8, 10))
+
+	state := State{
+		Program: program,
+		Pointer: 0,
+		RegisterA: registers[0],
+		RegisterB: registers[1],
+		RegisterC: registers[2],
+		Output: []int{},
+	}
+
+	for ; inc >= 1; registerA += inc {
+		output := strings.ReplaceAll(state.GetOutput(registerA), ",", "")
+
+		if len(output) >= length {
+			registerA = int64(math.Max(float64(registerA-inc),0))
+			inc /= 8
+		}
+	}
+	fmt.Println(registerA + 1)
+	return registerA + 1
+}
+
+func Part1(registers []int64, program []int) ([]int64, string) {
 	state := State{
 		Program: program,
 		Pointer: 0,
@@ -169,37 +324,15 @@ func Execute(registers []int, program []int) ([]int, string) {
 		RegisterB: registers[1],
 		RegisterC: registers[2],
 
-		Output: []string{},
+		Output: []int{},
 	}
 
-	for state.Pointer < len(state.Program) {
-		opcode := state.Program[state.Pointer]
-		operand := state.Program[state.Pointer+1]
+	state.Execute()
 
-		switch opcode {
-			case 0:
-				state.adv(operand)
-			case 1:
-				state.bxl(operand)
-			case 2:
-				state.bst(operand)
-			case 3:
-				state.jnz(operand)
-			case 4:
-				state.bxc(operand)
-			case 5:
-				state.out(operand)
-			case 6:
-				state.bdv(operand)
-			case 7:
-				state.cdv(operand)
-		}
-	}
-
-	return []int{state.RegisterA, state.RegisterB, state.RegisterC}, state.RenderOutput()
+	return []int64{state.RegisterA, state.RegisterB, state.RegisterC}, state.RenderOutput()
 }
 
-func (s *State) ResolveComboOperand(operand int) int {
+func (s *State) ResolveComboOperand(operand int) int64 {
 	switch operand {
 	case 4:
 		return s.RegisterA
@@ -210,6 +343,44 @@ func (s *State) ResolveComboOperand(operand int) int {
 	case 7:
 		panic("Invalid operand value!")
 	default:
-		return operand
+		return int64(operand)
 	}
+}
+
+func IntsToStrings(ints []int) []string {
+	output := []string{}
+	for _, i := range ints {
+		output = append(output, strconv.Itoa(i))
+	}
+	return output
+}
+
+func StringsToInts(strings []string) []int {
+	ints := []int{}
+	for _, i := range strings {
+		result, _ := strconv.Atoi(i)
+		ints = append(ints, result)
+	}
+	return ints
+}
+
+func Compare(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func octalPlaces(num int64) int {
+    if num == 0 {
+        return 1
+    }
+
+    return int(math.Floor(math.Log(float64(num)) / math.Log(8))) + 1
 }
