@@ -21,6 +21,10 @@ func main() {
 	// Part 1
 	possible := Part1(towels, designs)
 	fmt.Printf("Part 1: %d designs possible\n", possible)
+
+	// Part 2
+	combos := Part2(towels, designs)
+	fmt.Printf("Part 2: %d possible combinations\n", combos)
 }
 
 func readInput(filePath string) ([]string, []string) {
@@ -51,42 +55,46 @@ func readInput(filePath string) ([]string, []string) {
 }
 
 func Part1(towels []string, designs []string) int {
+	memo := map[string]int{}
 	possible := 0
+
 	for _, design := range designs {
-		if isPossible(towels, design) {
+		if countCombos(design, towels, memo) > 0 {
 			possible++
 		}
 	}
+
 	return possible
 }
 
-type DumbQueue []string
+func Part2(towels []string, designs []string) int {
+	memo := map[string]int{}
+	totalCombos := 0
 
-func (q *DumbQueue) push(item string) { *q = append(*q, item) }
+	for _, design := range designs {
+		totalCombos += countCombos(design, towels, memo)
+	}
 
-func (q *DumbQueue) pop() string {
-	item := (*q)[len(*q)-1]
-	*q = (*q)[0 : len(*q)-1]
-	return item
+	return totalCombos
 }
 
-func isPossible(towels []string, design string) bool {
-	workQueue := DumbQueue{}
-	workQueue.push("")
+func countCombos(design string, pieces []string, memo map[string]int) int {
+	if len(design) == 0 {
+		return 1
+	}
 
-	for len(workQueue) > 0 {
-		current := workQueue.pop()
+	if cacheHit, ok := memo[design]; ok {
+		return cacheHit
+	}
 
-		if current == design {
-			return true
-		}
+	foundCombos := 0
 
-		for _, towel := range towels {
-			if strings.HasPrefix(design, current+towel) {
-				workQueue.push(current + towel)
-			}
+	for _, piece := range pieces {
+		if len(piece) <= len(design) && strings.HasPrefix(design, piece) {
+			foundCombos += countCombos(design[len(piece):], pieces, memo)
 		}
 	}
 
-	return false
+	memo[design] = foundCombos
+	return foundCombos
 }
