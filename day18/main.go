@@ -97,7 +97,7 @@ func Part2(blocks []shared.Coord, initialBlocks int, size int) int {
 	end := shared.Coord{X: size, Y: size}
 
 	// Apply the initial blocks to the grid
-	for i := 0; i < len(blocks)-1; i++ {
+	for i := range len(blocks) - 1 {
 		// drop the block
 		grid[blocks[i].Y][blocks[i].X] = "#"
 
