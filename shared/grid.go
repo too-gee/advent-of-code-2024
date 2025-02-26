@@ -137,3 +137,11 @@ func (g Grid) Neighbors(loc Coord, blockers []string) map[string]Coord {
 
 	return neighbors
 }
+
+func (g Grid) At(loc Coord) string {
+	if g.Contains(loc) {
+		return g[loc.Y][loc.X]
+	}
+
+	return ""
+}
