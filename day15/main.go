@@ -91,20 +91,6 @@ func readInput(filePath string) (shared.Grid, []string) {
 	return grid, moves
 }
 
-func makeGrid(width int, height int) shared.Grid {
-	tmp := make(shared.Grid, height)
-
-	for i := range tmp {
-		tmp[i] = make([]string, width)
-
-		for j := range tmp[i] {
-			tmp[i][j] = "."
-		}
-	}
-
-	return tmp
-}
-
 const WALL = "#"
 const EMPTY = "."
 const BOX = "O"
@@ -192,7 +178,7 @@ func (w *Warehouse) widen() {
 func (w *Warehouse) rotate(dir int) {
 	// rotate the grid
 	width, height := (*w).Width(), (*w).Height()
-	result := makeGrid(width, height)
+	result := shared.MakeGrid(width, height)
 
 	for y := 0; y < width; y++ {
 		for x := 0; x < height; x++ {

@@ -78,20 +78,6 @@ func readInput(filePath string) []Region {
 	return tmpRegion.regions()
 }
 
-func makeGrid(width int, height int) shared.Grid {
-	tmp := make(shared.Grid, height)
-
-	for i := range tmp {
-		tmp[i] = make([]string, width)
-
-		for j := range tmp[i] {
-			tmp[i][j] = "."
-		}
-	}
-
-	return tmp
-}
-
 type Region struct {
 	plantType string
 	shared.Grid
@@ -101,7 +87,7 @@ func (r Region) measure() (int, int) {
 	area := 0
 	perimeter := 0
 
-	visited := makeGrid(r.Width(), r.Height())
+	visited := shared.MakeGrid(r.Width(), r.Height())
 	toVisit := []shared.Coord{r.LocationOf("x")}
 
 	for i := 0; i < len(toVisit); i++ {
@@ -124,7 +110,7 @@ func (r Region) measure() (int, int) {
 }
 
 func (r Region) regions() []Region {
-	coveredGrid := makeGrid(r.Width(), r.Height())
+	coveredGrid := shared.MakeGrid(r.Width(), r.Height())
 
 	floods := []Region{}
 
@@ -170,7 +156,7 @@ func (r Region) neighborCoords(loc shared.Coord) []shared.Coord {
 func (r Region) flood(loc shared.Coord) Region {
 	plantType := r.Grid[loc.Y][loc.X]
 
-	regionGrid := makeGrid(r.Width(), r.Height())
+	regionGrid := shared.MakeGrid(r.Width(), r.Height())
 	toVisit := []shared.Coord{loc}
 
 	for {
@@ -206,29 +192,9 @@ func (r Region) flood(loc shared.Coord) Region {
 	return Region{plantType: plantType, Grid: regionGrid}
 }
 
-func (r *Region) rotate(dir string) {
-	// rotate the grid
-	width, height := (*r).Grid.Width(), (*r).Grid.Height()
-	result := makeGrid(width, height)
-
-	for y := 0; y < width; y++ {
-		for x := 0; x < height; x++ {
-			if dir == "L" {
-				result[height-1-x][y] = (*r).Grid[y][x]
-			}
-
-			if dir == "R" {
-				result[x][height-1-y] = (*r).Grid[y][x]
-			}
-		}
-	}
-
-	(*r).Grid = result
-}
-
 func (r Region) dumbSideCount() int {
 	runs := r.dumbRunCount()
-	r.rotate("R")
+	r.Grid.Rotate("R")
 	runs += r.dumbRunCount()
 
 	return runs

@@ -145,3 +145,37 @@ func (g Grid) At(loc Coord) string {
 
 	return ""
 }
+
+func (g *Grid) Rotate(dir string) {
+	// rotate the grid
+	width, height := (*g).Width(), (*g).Height()
+	result := MakeGrid(width, height)
+
+	for y := 0; y < width; y++ {
+		for x := 0; x < height; x++ {
+			if dir == "L" {
+				result[height-1-x][y] = (*g)[y][x]
+			}
+
+			if dir == "R" {
+				result[x][height-1-y] = (*g)[y][x]
+			}
+		}
+	}
+
+	(*g) = result
+}
+
+func MakeGrid(width int, height int) Grid {
+	tmp := make(Grid, height)
+
+	for i := range tmp {
+		tmp[i] = make([]string, width)
+
+		for j := range tmp[i] {
+			tmp[i][j] = "."
+		}
+	}
+
+	return tmp
+}
