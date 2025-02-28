@@ -26,6 +26,7 @@ func TestAll(t *testing.T) {
 		{"input_small.txt", Part1, 6, 16},
 		{"input_small.txt", Part1, 4, 30},
 		{"input_small.txt", Part1, 2, 44},
+		{"input.txt", Part1, 100, 1321},
 	}
 
 	for _, c := range cases {
