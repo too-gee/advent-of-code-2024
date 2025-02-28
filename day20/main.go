@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/too-gee/advent-of-code-2024/shared"
 )
@@ -23,7 +23,13 @@ func main() {
 	maze := readInput(fileName)
 
 	// Part 1
-	fmt.Println(Part1(maze, 100))
+	if strings.HasSuffix(fileName, "small.txt") {
+		fmt.Printf("Part 1: %d cheats save over 64us with 2us cheats\n", Solve(maze, 64, 2))
+		fmt.Printf("Part 2: %d cheats save over 76us with 20us cheats\n", Solve(maze, 76, 20))
+	} else {
+		fmt.Printf("Part 1: %d cheats save over 100us with 2us cheats\n", Solve(maze, 100, 2))
+		fmt.Printf("Part 2: %d cheats save over 100us with 20us cheats\n", Solve(maze, 100, 20))
+	}
 
 }
 
@@ -45,141 +51,30 @@ func readInput(filePath string) shared.Grid {
 	return grid
 }
 
-func Part1(maze shared.Grid, minSavings int) int {
-	MarkPotentialCheats(&maze)
+func Solve(maze shared.Grid, minSavings int, cheatLength int) int {
 	remaining := GetRemainingLengths(maze)
 
 	cheats := 0
+	passable := []string{EMPTY, END}
 
-	for x, row := range maze {
-		for y := range row {
-			cur := shared.Coord{X: x, Y: y}
+	for start, value := range remaining {
+		for dx := -1 * cheatLength; dx <= cheatLength; dx++ {
+			for dy := -1 * cheatLength; dy <= cheatLength; dy++ {
+				end := shared.Coord{X: start.X + dx, Y: start.Y + dy}
+				duringCheat := int(math.Abs(float64(dx)) + math.Abs(float64(dy)))
 
-			if CHEAT == maze.At(cur) {
-				// Get all values of neighbors of this cheat location
-				vals := []int{}
-
-				for _, neighbor := range maze.Neighbors(cur, []string{WALL, CHEAT}) {
-					vals = append(vals, remaining[neighbor])
-				}
-
-				// The smallest value must be our start and the other values must be the ends
-				start := slices.Min(vals)
-				ends := []int{}
-
-				for x := range vals {
-					if vals[x] != start {
-						ends = append(ends, vals[x])
-					}
-				}
-
-				// Count how many times the savings are greater than the minimum savings
-				for _, end := range ends {
-					if end-start > minSavings {
-						cheats++
-					}
+				if !(dx == 0 && dy == 0) && // is not the start
+					duringCheat <= cheatLength && // is within cheat range
+					maze.Contains(end) && // is within maze
+					slices.Contains(passable, maze.At(end)) && // is passable
+					value-remaining[end]-duringCheat >= minSavings { // is a savings
+					cheats++
 				}
 			}
 		}
 	}
 
 	return cheats
-}
-
-func Solve(g shared.Grid, savings int) []State {
-	totalLength := 1
-
-	for _, row := range g {
-		for _, cell := range row {
-			if cell == EMPTY {
-				totalLength++
-			}
-		}
-	}
-
-	maxLength := totalLength - savings
-
-	start := g.LocationOf(START)
-	end := g.LocationOf(END)
-
-	queue := DumbQueue{}
-	queue.push(State{
-		cheated: false,
-		path:    []shared.Coord{start},
-	})
-
-	finished := []State{}
-
-	for len(queue) > 0 {
-		current := queue.pop()
-
-		// if we're at the end, save and continue
-		if current.Loc() == end {
-			finished = append(finished, current)
-			continue
-		}
-
-		if current.Len() > maxLength {
-			continue
-		}
-
-		var blockers []string
-
-		if current.cheated {
-			blockers = []string{WALL, CHEAT}
-		} else {
-			blockers = []string{WALL}
-		}
-
-		for _, neighbor := range g.Neighbors(current.Loc(), blockers) {
-			if slices.Contains(current.path, neighbor) {
-				continue
-			}
-
-			var newCheated bool
-
-			if g.At(neighbor) == CHEAT {
-				newCheated = true
-			} else {
-				newCheated = current.cheated
-			}
-
-			queue.push(State{
-				cheated: newCheated,
-				path:    CopyAppend(current.path, neighbor),
-			})
-		}
-	}
-
-	return finished
-}
-
-func CopyAppend(a []shared.Coord, b shared.Coord) []shared.Coord {
-	newSlice := make([]shared.Coord, len(a)+1)
-	copy(newSlice, a)
-	newSlice[len(a)] = b
-
-	return newSlice
-}
-
-const WALL = "#"
-const EMPTY = "."
-const START = "S"
-const END = "E"
-const CHEAT = "O"
-
-type State struct {
-	cheated bool
-	path    []shared.Coord
-}
-
-func (s State) Loc() shared.Coord {
-	return s.path[len(s.path)-1]
-}
-
-func now() int64 {
-	currentTime := time.Now()
-	return currentTime.UnixNano() / int64(time.Millisecond)
 }
 
 func MazeLength(maze shared.Grid) int {
@@ -196,33 +91,15 @@ func MazeLength(maze shared.Grid) int {
 	return totalLength
 }
 
-func MarkPotentialCheats(maze *shared.Grid) {
-	open := []string{EMPTY, START, END}
-	rotateDir := []string{"R", "L"}
-
-	for _, dir := range rotateDir {
-		for y := 1; y < len(*maze)-1; y++ {
-			row := (*maze)[y]
-			for x := 1; x < len(row)-3; x++ {
-				if row[x+1] == WALL && slices.Contains(open, row[x]) && slices.Contains(open, row[x+2]) {
-					(*maze)[y][x+1] = CHEAT
-				}
-			}
-		}
-
-		(*maze).Rotate(dir)
-	}
-}
-
 func GetRemainingLengths(maze shared.Grid) map[shared.Coord]int {
 	remaining := map[shared.Coord]int{}
 	crawler := []shared.Coord{maze.LocationOf(START)}
 
-	for i := MazeLength(maze); i > 0; i-- {
+	for i := MazeLength(maze); i >= 0; i-- {
 		cur := crawler[len(crawler)-1]
 		remaining[cur] = i
 
-		for _, neighbor := range maze.Neighbors(cur, []string{WALL, CHEAT}) {
+		for _, neighbor := range maze.Neighbors(cur, []string{WALL}) {
 			if slices.Contains(crawler, neighbor) {
 				continue
 			}
@@ -235,24 +112,7 @@ func GetRemainingLengths(maze shared.Grid) map[shared.Coord]int {
 	return remaining
 }
 
-/*func (s State) CheatsLeft() int {
-	if s.cheatStart == -1 {
-		return 2
-	}
-
-	return int(math.Max(0, float64(s.cheatStart-len(s.path)+1)))
-}*/
-
-func (s State) Len() int {
-	return len(s.path) - 1
-}
-
-type DumbQueue []State
-
-func (q *DumbQueue) push(item State) { *q = append(*q, item) }
-
-func (q *DumbQueue) pop() State {
-	item := (*q)[len(*q)-1]
-	*q = (*q)[0 : len(*q)-1]
-	return item
-}
+const WALL = "#"
+const EMPTY = "."
+const START = "S"
+const END = "E"
