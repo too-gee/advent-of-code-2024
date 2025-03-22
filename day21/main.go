@@ -84,34 +84,35 @@ func routeSequence(keypad shared.Grid, sequence []string) []string {
 	return route
 }
 
-func routeButton(keypad shared.Grid, current string, target string) []string {
-	start := keypad.LocationOf(current)
+func routeButton(keypad shared.Grid, start string, target string) []string {
+	current := keypad.LocationOf(start)
 	end := keypad.LocationOf(target)
 
-	var horizontalMoves string
-	var verticalMoves string
+	var moves []string
 
-	if start.X > end.X {
-		horizontalMoves = strings.Repeat(LEFT, start.X-end.X)
-	} else {
-		horizontalMoves = strings.Repeat(RIGHT, end.X-start.X)
+	for current != end {
+		for current.X != end.X && keypad.At(shared.Coord{X: end.X, Y: current.Y}) != GAP {
+			if current.X > end.X {
+				moves = append(moves, LEFT)
+				current.X--
+			} else {
+				moves = append(moves, RIGHT)
+				current.X++
+			}
+		}
+
+		for current.Y != end.Y && keypad.At(shared.Coord{X: current.X, Y: end.Y}) != GAP {
+			if current.Y > end.Y {
+				moves = append(moves, UP)
+				current.Y--
+			} else {
+				moves = append(moves, DOWN)
+				current.Y++
+			}
+		}
 	}
 
-	if start.Y > end.Y {
-		verticalMoves = strings.Repeat(UP, start.Y-end.Y)
-	} else {
-		verticalMoves = strings.Repeat(DOWN, end.Y-start.Y)
-	}
-
-	var completeMove string
-
-	if keypad.At(shared.Coord{X: end.X, Y: start.Y}) == GAP {
-		completeMove = verticalMoves + horizontalMoves + PRESS
-	} else {
-		completeMove = horizontalMoves + verticalMoves + PRESS
-	}
-
-	return strings.Split(completeMove, "")
+	return append(moves, PRESS)
 }
 
 const UP = "^"
