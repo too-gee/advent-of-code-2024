@@ -46,6 +46,16 @@ func main() {
 	dec2, _ := evalPresses(DIR, dec1)
 	proof, _ := evalPresses(NUM, dec2)
 	fmt.Printf("%s -> %s -> %s -> %s\n", final, dec1, dec2, proof)
+
+	fmt.Println()
+	result := "<v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A"
+	fmt.Println(result)
+	result, _ = evalPresses(DIR, result)
+	fmt.Println(result)
+	result, _ = evalPresses(DIR, result)
+	fmt.Println(result)
+	result, _ = evalPresses(NUM, result)
+	fmt.Println(result)
 }
 
 func readInput(filePath string) []string {
@@ -73,15 +83,15 @@ func Part1(code string) int {
 	numeric := shared.Grid{{"7", "8", "9"}, {"4", "5", "6"}, {"1", "2", "3"}, {GAP, "0", PRESS}}
 	directional := [][]string{{GAP, UP, PRESS}, {LEFT, DOWN, RIGHT}}
 
-	route1 := routeSequence(numeric, strings.Split(code, ""))
-	route2 := routeSequence(directional, route1)
-	final := routeSequence(directional, route2)
+	route1 := findShortestSequence(numeric, code)
+	route2 := findShortestSequence(directional, route1)
+	final := findShortestSequence(directional, route2)
 
 	fmt.Printf("%s :: route1: %v\n", code, route1)
 	//fmt.Printf("%s :: route2: %v\n", code, route2)
 	//fmt.Printf("%s :: final: %v\n", code, final)
 	fmt.Printf("%s :: %v\n", code, final)
-	fmt.Println(evalPresses(numeric, strings.Join(route1, "")))
+	fmt.Println(evalPresses(numeric, route1))
 
 	numericPart, _ := strconv.Atoi(code[:3])
 	lengthOfSequence := len(final)
@@ -183,9 +193,12 @@ func findShortestSequence(keypad shared.Grid, sequence string) string {
 	for i := 0; i < len(moves)-1; i++ {
 		moveId := moves[i] + moves[i+1]
 		if saved, ok := MEMO[moveId]; ok {
+			fmt.Println("CACHE HIT")
 			solution += saved + "A"
 		} else {
-			solution += findShortestRoute(keypad, moveId) + "A"
+			hardWork := findShortestRoute(keypad, moveId)
+			MEMO[moveId] = hardWork
+			solution += hardWork + "A"
 		}
 	}
 
@@ -200,6 +213,7 @@ func findShortestRoute(keypad shared.Grid, moveId string) string {
 
 	init := strings.Repeat(UP, (keypad.Width()*keypad.Height())+2)
 	best := init
+	found := []string{}
 
 	endLoc := keypad.LocationOf(b)
 
@@ -232,13 +246,13 @@ func findShortestRoute(keypad shared.Grid, moveId string) string {
 
 		fmt.Printf("queue: %d, current: %s\n", len(queue), current)
 
-		if best != init && len(current) >= len(best) {
+		if best != init && len(current) > len(best) {
 			continue
 		}
 
 		if currentLoc == endLoc {
 			best = current
-			fmt.Println(best)
+			found = append(found, current)
 			continue
 		}
 
@@ -257,6 +271,10 @@ func findShortestRoute(keypad shared.Grid, moveId string) string {
 		if !strings.Contains(current, RIGHT) {
 			queue.push(current + LEFT)
 		}
+	}
+
+	if len(found) > 1 {
+		fmt.Printf("found %s: %v\n", moveId, found)
 	}
 
 	return best
