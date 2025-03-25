@@ -35,7 +35,7 @@ func main() {
 	PopulateKeypads()
 
 	// part 1
-	pt1complexity := Solve(codes, 2)
+	pt1complexity := Solve(codes, 12)
 	fmt.Println(pt1complexity)
 }
 
@@ -74,8 +74,7 @@ func getComplexity(code string, dirKeypads int) int {
 	solutions := findAllRoundTrips(NUM, PRESS+code)
 
 	for range dirKeypads {
-		solutions = findAllMultileg(DIR, solutions[0:])
-		fmt.Printf("count :: %d\n", len(solutions))
+		solutions = findMultileg(DIR, solutions)
 	}
 
 	final := solutions[0]
@@ -115,7 +114,7 @@ func evalPresses(keypad shared.Grid, sequence string) (string, error) {
 	return result, nil
 }
 
-func findAllMultileg(keypad shared.Grid, sequences []string) []string {
+func findMultileg(keypad shared.Grid, sequences []string) []string {
 	legs := []string{}
 
 	for _, possible := range sequences {
@@ -125,25 +124,10 @@ func findAllMultileg(keypad shared.Grid, sequences []string) []string {
 			tripSolutions = append(tripSolutions, newSolutions)
 		}
 
-		legs = slices.Concat(legs, findAllPermutations("", tripSolutions))
+		legs = append(legs, findShortestPermutation("", tripSolutions))
 	}
 
-	short := []string{}
-	bestLength := 9999
-
-	for i := range legs {
-		if len(legs[i]) < bestLength {
-			bestLength = len(legs[i])
-		}
-	}
-
-	for i := range legs {
-		if len(legs[i]) <= bestLength {
-			short = append(short, legs[i])
-		}
-	}
-
-	return short
+	return shortest(legs)[0:]
 }
 
 func findAllRoundTrips(keypad shared.Grid, sequence string) []string {
@@ -248,7 +232,21 @@ func findAllPermutations(base string, options [][]string) []string {
 		perms = slices.Concat(perms, findAllPermutations(newBase, options[1:]))
 	}
 
-	return perms
+	return shortest(perms)
+}
+
+func findShortestPermutation(base string, options [][]string) string {
+	if len(options) == 0 {
+		return base
+	}
+
+	output := base
+
+	for i := range options {
+		output += shortest(options[i])[0]
+	}
+
+	return output
 }
 
 func splitTrips(sequence string) []string {
@@ -265,6 +263,34 @@ func splitTrips(sequence string) []string {
 	}
 
 	return trips
+}
+
+func shortest(strings []string) []string {
+	shortest := 999999999
+	count := 0
+
+	for _, x := range strings {
+		if len(x) < shortest {
+			shortest = len(x)
+			count = 0
+		}
+
+		if len(x) == shortest {
+			count++
+		}
+	}
+
+	output := make([]string, count)
+	count = 0
+
+	for _, x := range strings {
+		if len(x) == shortest {
+			output[count] = x
+			count++
+		}
+	}
+
+	return output
 }
 
 const UP = "^"
