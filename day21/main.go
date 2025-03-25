@@ -11,10 +11,15 @@ import (
 	"github.com/too-gee/advent-of-code-2024/shared"
 )
 
-var MEMO = map[string]string{}
+var MEMO = map[string][]string{}
 
 var NUM = shared.Grid{}
 var DIR = shared.Grid{}
+
+func PopulateKeypads() {
+	NUM = shared.Grid{{"7", "8", "9"}, {"4", "5", "6"}, {"1", "2", "3"}, {GAP, "0", PRESS}}
+	DIR = [][]string{{GAP, UP, PRESS}, {LEFT, DOWN, RIGHT}}
+}
 
 func main() {
 	var fileName string
@@ -27,35 +32,15 @@ func main() {
 
 	codes := readInput(fileName)
 
-	NUM = shared.Grid{{"7", "8", "9"}, {"4", "5", "6"}, {"1", "2", "3"}, {GAP, "0", PRESS}}
-	DIR = [][]string{{GAP, UP, PRESS}, {LEFT, DOWN, RIGHT}}
+	PopulateKeypads()
 
 	// part 1
-	complexity := 0
-	for _, code := range codes {
-		complexity += Part1(code)
+	pt1complexity := Solve(codes, 2)
+	fmt.Println(pt1complexity)
+
+	for k, _ := range MEMO {
+		fmt.Println(k)
 	}
-	fmt.Println(complexity)
-
-	start := "029A"
-	enc1 := findShortestSequence(NUM, start)
-	enc2 := findShortestSequence(DIR, enc1)
-	final := findShortestSequence(DIR, enc2)
-	fmt.Printf("%s -> %s -> %s -> %s\n", start, enc1, enc2, final)
-	dec1, _ := evalPresses(DIR, final)
-	dec2, _ := evalPresses(DIR, dec1)
-	proof, _ := evalPresses(NUM, dec2)
-	fmt.Printf("%s -> %s -> %s -> %s\n", final, dec1, dec2, proof)
-
-	fmt.Println()
-	result := "<v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A"
-	fmt.Println(result)
-	result, _ = evalPresses(DIR, result)
-	fmt.Println(result)
-	result, _ = evalPresses(DIR, result)
-	fmt.Println(result)
-	result, _ = evalPresses(NUM, result)
-	fmt.Println(result)
 }
 
 func readInput(filePath string) []string {
@@ -79,82 +64,29 @@ func readInput(filePath string) []string {
 	return codes
 }
 
-func Part1(code string) int {
-	numeric := shared.Grid{{"7", "8", "9"}, {"4", "5", "6"}, {"1", "2", "3"}, {GAP, "0", PRESS}}
-	directional := [][]string{{GAP, UP, PRESS}, {LEFT, DOWN, RIGHT}}
+func Solve(codes []string, dirKeypads int) int {
+	complexity := 0
 
-	route1 := findShortestSequence(numeric, code)
-	route2 := findShortestSequence(directional, route1)
-	final := findShortestSequence(directional, route2)
+	for _, code := range codes {
+		complexity += getComplexity(code, dirKeypads)
+	}
 
-	fmt.Printf("%s :: route1: %v\n", code, route1)
-	//fmt.Printf("%s :: route2: %v\n", code, route2)
-	//fmt.Printf("%s :: final: %v\n", code, final)
-	fmt.Printf("%s :: %v\n", code, final)
-	fmt.Println(evalPresses(numeric, route1))
+	return complexity
+}
+
+func getComplexity(code string, dirKeypads int) int {
+	solutions := findAllRoundTrips(NUM, PRESS+code)
+
+	for range dirKeypads {
+		solutions = findAllMultileg(DIR, solutions)
+	}
+
+	final := solutions[0]
 
 	numericPart, _ := strconv.Atoi(code[:3])
 	lengthOfSequence := len(final)
 
-	//fmt.Printf("%s :: %d * %d = %d\n", code, numericPart, lengthOfSequence, numericPart*lengthOfSequence)
-
 	return numericPart * lengthOfSequence
-}
-
-func routeSequence(keypad shared.Grid, sequence []string) []string {
-	route := []string{}
-
-	previous := PRESS
-	for _, current := range sequence {
-		newSteps := routeButton(keypad, previous, current)
-		route = slices.Concat(route, newSteps)
-		previous = current
-	}
-
-	return route
-}
-
-func routeButton(keypad shared.Grid, start string, target string) []string {
-	current := keypad.LocationOf(start)
-	end := keypad.LocationOf(target)
-
-	var moves []string
-
-	var horizontalDir int
-	var horizontalMove string
-
-	if current.X > end.X {
-		horizontalDir = -1
-		horizontalMove = LEFT
-	} else {
-		horizontalDir = 1
-		horizontalMove = RIGHT
-	}
-
-	var verticalDir int
-	var verticalMove string
-
-	if current.Y > end.Y {
-		verticalDir = -1
-		verticalMove = UP
-	} else {
-		verticalDir = 1
-		verticalMove = DOWN
-	}
-
-	for current != end {
-		for current.X != end.X && keypad.At(shared.Coord{X: current.X + horizontalDir, Y: current.Y}) != GAP {
-			moves = append(moves, horizontalMove)
-			current.X += horizontalDir
-		}
-
-		for current.Y != end.Y && keypad.At(shared.Coord{X: current.X, Y: current.Y + verticalDir}) != GAP {
-			moves = append(moves, verticalMove)
-			current.Y += verticalDir
-		}
-	}
-
-	return append(moves, PRESS)
 }
 
 func evalPresses(keypad shared.Grid, sequence string) (string, error) {
@@ -186,98 +118,169 @@ func evalPresses(keypad shared.Grid, sequence string) (string, error) {
 	return result, nil
 }
 
-func findShortestSequence(keypad shared.Grid, sequence string) string {
-	solution := ""
+func findAllMultileg(keypad shared.Grid, sequences []string) []string {
+	legs := []string{}
 
-	moves := strings.Split("A"+sequence+"A", "")
-	for i := 0; i < len(moves)-1; i++ {
-		moveId := moves[i] + moves[i+1]
-		if saved, ok := MEMO[moveId]; ok {
-			fmt.Println("CACHE HIT")
-			solution += saved + "A"
-		} else {
-			hardWork := findShortestRoute(keypad, moveId)
-			MEMO[moveId] = hardWork
-			solution += hardWork + "A"
+	for _, possible := range sequences {
+		tripSolutions := [][]string{}
+		for _, trip := range splitTrips(possible) {
+			newSolutions := findAllRoundTrips(keypad, trip)
+			tripSolutions = append(tripSolutions, newSolutions)
+		}
+
+		legs = slices.Concat(legs, findAllPermutations("", tripSolutions))
+	}
+
+	short := []string{}
+	bestLength := 9999
+
+	for i := range legs {
+		if len(legs[i]) < bestLength {
+			bestLength = len(legs[i])
 		}
 	}
 
-	return solution[:len(solution)-1]
+	for i := range legs {
+		if len(legs[i]) <= bestLength {
+			short = append(short, legs[i])
+		}
+	}
+
+	return short
 }
 
-func findShortestRoute(keypad shared.Grid, moveId string) string {
+func findAllRoundTrips(keypad shared.Grid, sequence string) []string {
+	if string(sequence[0]) != PRESS || sequence[0] != sequence[len(sequence)-1] {
+		panic("This only works for round trips")
+	}
+
+	var roundTrips []string
+
+	if cached, ok := MEMO[sequence]; ok {
+		return cached
+	} else {
+		roundTrips = findAllRoundTripsRaw(keypad, sequence)
+	}
+	// memoize and return
+	MEMO[sequence] = roundTrips
+	return roundTrips
+}
+
+func findAllRoundTripsRaw(keypad shared.Grid, sequence string) []string {
+	possible := [][]string{}
+
+	for i := 0; i < len(sequence)-1; i++ {
+		tmp := findAllRoutes(keypad, string(sequence[i]), string(sequence[i+1]))
+
+		newRoutes := make([]string, len(tmp))
+		copy(newRoutes, tmp)
+		for j := range newRoutes {
+			newRoutes[j] = newRoutes[j] + PRESS
+		}
+
+		possible = append(possible, newRoutes)
+	}
+
+	found := findAllPermutations("", possible)
+
+	valid := []string{}
+
+	for i := range found {
+		result, err := evalPresses(keypad, found[i])
+		if err == nil || result == sequence {
+			valid = append(valid, found[i])
+		}
+	}
+
+	return valid
+}
+
+func findAllRoutes(keypad shared.Grid, start string, end string) []string {
+	startLoc := keypad.LocationOf(start)
+	endLoc := keypad.LocationOf(end)
+
+	var xDist int
+	var yDist int
+	var xMove string
+	var yMove string
+
+	if endLoc.X > startLoc.X {
+		xDist = endLoc.X - startLoc.X
+		xMove = RIGHT
+	} else {
+		xDist = startLoc.X - endLoc.X
+		xMove = LEFT
+	}
+
+	if endLoc.Y > startLoc.Y {
+		yDist = endLoc.Y - startLoc.Y
+		yMove = DOWN
+	} else {
+		yDist = startLoc.Y - endLoc.Y
+		yMove = UP
+	}
+
 	queue := DumbQueue{""}
 
-	a := string(moveId[0])
-	b := string(moveId[1])
-
-	init := strings.Repeat(UP, (keypad.Width()*keypad.Height())+2)
-	best := init
-	found := []string{}
-
-	endLoc := keypad.LocationOf(b)
+	solutions := []string{}
 
 	for len(queue) > 0 {
 		current := queue.pop()
 
-		currentLoc := keypad.LocationOf(a)
-		validPath := true
-		for _, dir := range strings.Split(current, "") {
-			switch dir {
-			case UP:
-				currentLoc.Y--
-			case DOWN:
-				currentLoc.Y++
-			case LEFT:
-				currentLoc.X--
-			case RIGHT:
-				currentLoc.X++
-			}
+		xMoves := strings.Count(current, xMove)
+		yMoves := strings.Count(current, yMove)
 
-			if !keypad.Contains(currentLoc) || keypad.At(currentLoc) == GAP {
-				validPath = false
-				break
-			}
+		if xMoves < xDist {
+			queue.push(current + xMove)
 		}
 
-		if !validPath {
-			continue
+		if yMoves < yDist {
+			queue.push(current + yMove)
 		}
 
-		fmt.Printf("queue: %d, current: %s\n", len(queue), current)
-
-		if best != init && len(current) > len(best) {
-			continue
-		}
-
-		if currentLoc == endLoc {
-			best = current
-			found = append(found, current)
-			continue
-		}
-
-		if !strings.Contains(current, UP) {
-			queue.push(current + DOWN)
-		}
-
-		if !strings.Contains(current, DOWN) {
-			queue.push(current + UP)
-		}
-
-		if !strings.Contains(current, LEFT) {
-			queue.push(current + RIGHT)
-		}
-
-		if !strings.Contains(current, RIGHT) {
-			queue.push(current + LEFT)
+		if xMoves == xDist && yMoves == yDist {
+			solutions = append(solutions, current)
 		}
 	}
 
-	if len(found) > 1 {
-		fmt.Printf("found %s: %v\n", moveId, found)
+	return solutions
+}
+
+func findAllPermutations(base string, options [][]string) []string {
+	if len(options) == 0 {
+		return []string{base}
 	}
 
-	return best
+	perms := []string{}
+
+	for _, option := range options[0] {
+		var newBase string
+		if base == "" {
+			newBase = option
+		} else {
+			newBase = base + option
+		}
+
+		perms = slices.Concat(perms, findAllPermutations(newBase, options[1:]))
+	}
+
+	return perms
+}
+
+func splitTrips(sequence string) []string {
+	trips := []string{}
+
+	buffer := ""
+
+	for _, char := range sequence {
+		buffer += string(char)
+		if string(char) == PRESS {
+			trips = append(trips, PRESS+buffer)
+			buffer = ""
+		}
+	}
+
+	return trips
 }
 
 type DumbQueue []string
