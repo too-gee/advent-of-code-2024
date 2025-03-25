@@ -37,10 +37,6 @@ func main() {
 	// part 1
 	pt1complexity := Solve(codes, 2)
 	fmt.Println(pt1complexity)
-
-	for k, _ := range MEMO {
-		fmt.Println(k)
-	}
 }
 
 func readInput(filePath string) []string {
@@ -78,7 +74,8 @@ func getComplexity(code string, dirKeypads int) int {
 	solutions := findAllRoundTrips(NUM, PRESS+code)
 
 	for range dirKeypads {
-		solutions = findAllMultileg(DIR, solutions)
+		solutions = findAllMultileg(DIR, solutions[0:])
+		fmt.Printf("count :: %d\n", len(solutions))
 	}
 
 	final := solutions[0]
@@ -154,13 +151,12 @@ func findAllRoundTrips(keypad shared.Grid, sequence string) []string {
 		panic("This only works for round trips")
 	}
 
-	var roundTrips []string
-
 	if cached, ok := MEMO[sequence]; ok {
 		return cached
-	} else {
-		roundTrips = findAllRoundTripsRaw(keypad, sequence)
 	}
+
+	roundTrips := findAllRoundTripsRaw(keypad, sequence)
+
 	// memoize and return
 	MEMO[sequence] = roundTrips
 	return roundTrips
@@ -196,54 +192,42 @@ func findAllRoundTripsRaw(keypad shared.Grid, sequence string) []string {
 }
 
 func findAllRoutes(keypad shared.Grid, start string, end string) []string {
+	if cached, ok := MEMO[start+end]; ok {
+		return cached
+	}
+
+	routes := findAllRoutesRaw(keypad, start, end)
+
+	// memoize and return
+	MEMO[start+end] = routes
+	return routes
+}
+
+func findAllRoutesRaw(keypad shared.Grid, start string, end string) []string {
 	startLoc := keypad.LocationOf(start)
 	endLoc := keypad.LocationOf(end)
 
-	var xDist int
-	var yDist int
-	var xMove string
-	var yMove string
+	var xMoves string
+	var yMoves string
 
 	if endLoc.X > startLoc.X {
-		xDist = endLoc.X - startLoc.X
-		xMove = RIGHT
+		xMoves = strings.Repeat(RIGHT, endLoc.X-startLoc.X)
 	} else {
-		xDist = startLoc.X - endLoc.X
-		xMove = LEFT
+		xMoves = strings.Repeat(LEFT, startLoc.X-endLoc.X)
 	}
 
 	if endLoc.Y > startLoc.Y {
-		yDist = endLoc.Y - startLoc.Y
-		yMove = DOWN
+		yMoves = strings.Repeat(DOWN, endLoc.Y-startLoc.Y)
 	} else {
-		yDist = startLoc.Y - endLoc.Y
-		yMove = UP
+		yMoves = strings.Repeat(UP, startLoc.Y-endLoc.Y)
 	}
 
-	queue := DumbQueue{""}
-
-	solutions := []string{}
-
-	for len(queue) > 0 {
-		current := queue.pop()
-
-		xMoves := strings.Count(current, xMove)
-		yMoves := strings.Count(current, yMove)
-
-		if xMoves < xDist {
-			queue.push(current + xMove)
-		}
-
-		if yMoves < yDist {
-			queue.push(current + yMove)
-		}
-
-		if xMoves == xDist && yMoves == yDist {
-			solutions = append(solutions, current)
-		}
+	if xMoves != "" && yMoves != "" {
+		return []string{xMoves + yMoves, yMoves + xMoves}
+	} else {
+		return []string{xMoves + yMoves}
 	}
 
-	return solutions
 }
 
 func findAllPermutations(base string, options [][]string) []string {
@@ -281,16 +265,6 @@ func splitTrips(sequence string) []string {
 	}
 
 	return trips
-}
-
-type DumbQueue []string
-
-func (q *DumbQueue) push(item string) { *q = append(*q, item) }
-
-func (q *DumbQueue) pop() string {
-	item := (*q)[len(*q)-1]
-	*q = (*q)[0 : len(*q)-1]
-	return item
 }
 
 const UP = "^"
