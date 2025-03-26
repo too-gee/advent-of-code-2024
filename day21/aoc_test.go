@@ -15,6 +15,8 @@ func TestAll(t *testing.T) {
 	cases := []testCase{
 		{"input_small.txt", Solve, 2, 126384},
 		{"input.txt", Solve, 2, 222670},
+		{"input_small.txt", Solve, 25, 154115708116294},
+		{"input.txt", Solve, 25, 271397390297138},
 	}
 
 	for _, c := range cases {

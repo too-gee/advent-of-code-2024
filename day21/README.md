@@ -119,3 +119,5 @@ The keypads form a chain, just like before: your directional keypad controls a r
 The door codes are the same this time around; only the number of robots and directional keypads has changed.
 
 Find the fewest number of button presses you'll need to perform in order to cause the robot in front of the door to type each code. **What is the sum of the complexities of the five codes on your list?**
+
+Your puzzle answer was `271397390297138`.

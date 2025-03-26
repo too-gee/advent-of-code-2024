@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"slices"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 )
 
 var MEMO = map[string][]string{}
+var LMEMO = map[string]int{}
 
 var NUM = shared.Grid{}
 var DIR = shared.Grid{}
@@ -35,12 +37,12 @@ func main() {
 	PopulateKeypads()
 
 	// part 1
-	pt1complexity := Solve(codes, 12)
+	pt1complexity := Solve(codes, 25)
 	fmt.Println(pt1complexity)
 
-	for k, v := range MEMO {
-		fmt.Printf("%s -> %v\n", k, v)
-	}
+	//for k, v := range MEMO {
+	//	fmt.Printf("%s -> %v\n", k, v)
+	//}
 }
 
 func readInput(filePath string) []string {
@@ -75,16 +77,10 @@ func Solve(codes []string, dirKeypads int) int {
 }
 
 func getComplexity(code string, dirKeypads int) int {
-	solutions := findAllRoundTrips(NUM, PRESS+code)
+	numTrips := getSequences(NUM, code)
 
-	for range dirKeypads {
-		solutions = findMultileg(DIR, solutions)
-	}
-
-	final := solutions[0]
-
+	lengthOfSequence := recursiveCount(DIR, numTrips, dirKeypads)
 	numericPart, _ := strconv.Atoi(code[:3])
-	lengthOfSequence := len(final)
 
 	return numericPart * lengthOfSequence
 }
@@ -118,45 +114,33 @@ func evalPresses(keypad shared.Grid, sequence string) (string, error) {
 	return result, nil
 }
 
-func findMultileg(keypad shared.Grid, sequences []string) []string {
-	legs := []string{}
-
-	for _, possible := range sequences {
-		tripSolutions := [][]string{}
-		for _, trip := range splitTrips(possible) {
-			newSolutions := findAllRoundTrips(keypad, trip)
-			tripSolutions = append(tripSolutions, newSolutions)
-		}
-
-		legs = append(legs, findShortestPermutation(tripSolutions))
-	}
-
-	return shortest(legs)[0:]
-}
-
-func findAllRoundTrips(keypad shared.Grid, sequence string) []string {
-	if string(sequence[0]) != PRESS || sequence[0] != sequence[len(sequence)-1] {
-		panic("This only works for round trips")
-	}
-
+// Memoized version of getSequencesRaw
+func getSequences(keypad shared.Grid, sequence string) []string {
 	memoId := fmt.Sprintf("trip-%s", sequence)
 
 	if cached, ok := MEMO[memoId]; ok {
 		return cached
 	}
 
-	roundTrips := findAllRoundTripsRaw(keypad, sequence)
+	roundTrips := getSequencesRaw(keypad, sequence)
 
 	// memoize and return
 	MEMO[memoId] = roundTrips
 	return roundTrips
 }
 
-func findAllRoundTripsRaw(keypad shared.Grid, sequence string) []string {
+// ACCEPTS: A sequence implied to begin at A and ending explicitly at A
+//
+// RETURNS: A slice of sequences implied to begin at A and ending explicitly
+//
+//	at A that, when entered together, produce the original input
+//	sequence
+func getSequencesRaw(keypad shared.Grid, sequence string) []string {
 	possible := [][]string{}
 
-	for i := 0; i < len(sequence)-1; i++ {
-		tmp := findAllRoutes(keypad, string(sequence[i]), string(sequence[i+1]))
+	paddedSequence := PRESS + sequence
+	for i := 0; i < len(paddedSequence)-1; i++ {
+		tmp := getPresses(keypad, string(paddedSequence[i]), string(paddedSequence[i+1]))
 
 		newRoutes := make([]string, len(tmp))
 		copy(newRoutes, tmp)
@@ -167,35 +151,71 @@ func findAllRoundTripsRaw(keypad shared.Grid, sequence string) []string {
 		possible = append(possible, newRoutes)
 	}
 
-	found := findAllPermutations("", possible)
-
-	valid := []string{}
-
-	for i := range found {
-		result, err := evalPresses(keypad, found[i])
-		if err == nil || result == sequence {
-			valid = append(valid, found[i])
-		}
-	}
+	found := getPermutations("", possible)
+	valid := onlyValid(keypad, sequence, found)
 
 	return valid
 }
 
-func findAllRoutes(keypad shared.Grid, start string, end string) []string {
+func recursiveCount(keypad shared.Grid, sequences []string, levels int) int {
+	bestCount := math.MaxInt64
+
+	if levels == 0 {
+		for _, trip := range sequences {
+			if len(trip) < bestCount {
+				bestCount = len(trip)
+			}
+		}
+
+		return bestCount
+	}
+
+	for _, sequence := range sequences {
+		subs := splitSequence(sequence)
+		seqLength := 0
+
+		for _, sub := range subs {
+			memoId := fmt.Sprintf("exp-%s-%d", sub, levels)
+
+			if cached, ok := LMEMO[memoId]; ok {
+				seqLength += cached
+				continue
+			}
+
+			newSeqs := getSequences(keypad, sub)
+			newLength := recursiveCount(keypad, newSeqs, levels-1)
+
+			LMEMO[memoId] = newLength
+			seqLength += newLength
+
+			if seqLength > bestCount {
+				break
+			}
+		}
+
+		if seqLength < bestCount {
+			bestCount = seqLength
+		}
+	}
+
+	return bestCount
+}
+
+func getPresses(keypad shared.Grid, start string, end string) []string {
 	memoId := fmt.Sprintf("route-%s%s", start, end)
 
 	if cached, ok := MEMO[memoId]; ok {
 		return cached
 	}
 
-	routes := findAllRoutesRaw(keypad, start, end)
+	routes := getPressesRaw(keypad, start, end)
 
 	// memoize and return
 	MEMO[memoId] = routes
 	return routes
 }
 
-func findAllRoutesRaw(keypad shared.Grid, start string, end string) []string {
+func getPressesRaw(keypad shared.Grid, start string, end string) []string {
 	startLoc := keypad.LocationOf(start)
 	endLoc := keypad.LocationOf(end)
 
@@ -222,14 +242,14 @@ func findAllRoutesRaw(keypad shared.Grid, start string, end string) []string {
 
 }
 
-func findAllPermutations(base string, options [][]string) []string {
-	if len(options) == 0 {
+func getPermutations(base string, blocks [][]string) []string {
+	if len(blocks) == 0 {
 		return []string{base}
 	}
 
 	perms := []string{}
 
-	for _, option := range options[0] {
+	for _, option := range blocks[0] {
 		var newBase string
 		if base == "" {
 			newBase = option
@@ -237,27 +257,13 @@ func findAllPermutations(base string, options [][]string) []string {
 			newBase = base + option
 		}
 
-		perms = slices.Concat(perms, findAllPermutations(newBase, options[1:]))
+		perms = slices.Concat(perms, getPermutations(newBase, blocks[1:]))
 	}
 
-	return shortest(perms)
+	return onlyShortest(perms)
 }
 
-func findShortestPermutation(options [][]string) string {
-	output := ""
-
-	if len(options) == 0 {
-		return output
-	}
-
-	for i := range options {
-		output += shortest(options[i])[0]
-	}
-
-	return output
-}
-
-func splitTrips(sequence string) []string {
+func splitSequence(sequence string) []string {
 	trips := []string{}
 
 	buffer := ""
@@ -265,7 +271,7 @@ func splitTrips(sequence string) []string {
 	for _, char := range sequence {
 		buffer += string(char)
 		if string(char) == PRESS {
-			trips = append(trips, PRESS+buffer)
+			trips = append(trips, buffer)
 			buffer = ""
 		}
 	}
@@ -273,7 +279,7 @@ func splitTrips(sequence string) []string {
 	return trips
 }
 
-func shortest(strings []string) []string {
+func onlyShortest(strings []string) []string {
 	shortest := 999999999
 	count := 0
 
@@ -295,6 +301,20 @@ func shortest(strings []string) []string {
 		if len(x) == shortest {
 			output[count] = x
 			count++
+		}
+	}
+
+	return output
+}
+
+func onlyValid(keypad shared.Grid, sequence string, trips []string) []string {
+	output := []string{}
+
+	for _, trip := range trips {
+		result, _ := evalPresses(keypad, trip)
+
+		if result == sequence {
+			output = append(output, trip)
 		}
 	}
 
