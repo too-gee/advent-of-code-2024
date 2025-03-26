@@ -36,13 +36,9 @@ func main() {
 
 	PopulateKeypads()
 
-	// part 1
-	pt1complexity := Solve(codes, 25)
-	fmt.Println(pt1complexity)
-
-	//for k, v := range MEMO {
-	//	fmt.Printf("%s -> %v\n", k, v)
-	//}
+	// part 1 & part 2
+	fmt.Printf("The complexity for part 1 is %d.\n", Solve(codes, 2))
+	fmt.Printf("The complexity for part 2 is %d.\n", Solve(codes, 25))
 }
 
 func readInput(filePath string) []string {
@@ -83,35 +79,6 @@ func getComplexity(code string, dirKeypads int) int {
 	numericPart, _ := strconv.Atoi(code[:3])
 
 	return numericPart * lengthOfSequence
-}
-
-func evalPresses(keypad shared.Grid, sequence string) (string, error) {
-	result := ""
-
-	location := keypad.LocationOf(PRESS)
-
-	for _, code := range strings.Split(sequence, "") {
-		switch code {
-		case UP:
-			location.Y--
-		case DOWN:
-			location.Y++
-		case LEFT:
-			location.X--
-		case RIGHT:
-			location.X++
-		}
-
-		if keypad.At(location) == GAP || !keypad.Contains(location) {
-			return "", fmt.Errorf("invalid location %v", location)
-		}
-
-		if code == PRESS {
-			result += keypad.At(location)
-		}
-	}
-
-	return result, nil
 }
 
 // Memoized version of getSequencesRaw
@@ -319,6 +286,35 @@ func onlyValid(keypad shared.Grid, sequence string, trips []string) []string {
 	}
 
 	return output
+}
+
+func evalPresses(keypad shared.Grid, sequence string) (string, error) {
+	result := ""
+
+	location := keypad.LocationOf(PRESS)
+
+	for _, code := range strings.Split(sequence, "") {
+		switch code {
+		case UP:
+			location.Y--
+		case DOWN:
+			location.Y++
+		case LEFT:
+			location.X--
+		case RIGHT:
+			location.X++
+		}
+
+		if keypad.At(location) == GAP || !keypad.Contains(location) {
+			return "", fmt.Errorf("invalid location %v", location)
+		}
+
+		if code == PRESS {
+			result += keypad.At(location)
+		}
+	}
+
+	return result, nil
 }
 
 const UP = "^"
