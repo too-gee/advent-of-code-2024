@@ -128,7 +128,7 @@ func findMultileg(keypad shared.Grid, sequences []string) []string {
 			tripSolutions = append(tripSolutions, newSolutions)
 		}
 
-		legs = append(legs, findShortestPermutation("", tripSolutions))
+		legs = append(legs, findShortestPermutation(tripSolutions))
 	}
 
 	return shortest(legs)[0:]
@@ -243,12 +243,12 @@ func findAllPermutations(base string, options [][]string) []string {
 	return shortest(perms)
 }
 
-func findShortestPermutation(base string, options [][]string) string {
-	if len(options) == 0 {
-		return base
-	}
+func findShortestPermutation(options [][]string) string {
+	output := ""
 
-	output := base
+	if len(options) == 0 {
+		return output
+	}
 
 	for i := range options {
 		output += shortest(options[i])[0]
