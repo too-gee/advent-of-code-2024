@@ -37,6 +37,10 @@ func main() {
 	// part 1
 	pt1complexity := Solve(codes, 12)
 	fmt.Println(pt1complexity)
+
+	for k, v := range MEMO {
+		fmt.Printf("%s -> %v\n", k, v)
+	}
 }
 
 func readInput(filePath string) []string {
@@ -135,14 +139,16 @@ func findAllRoundTrips(keypad shared.Grid, sequence string) []string {
 		panic("This only works for round trips")
 	}
 
-	if cached, ok := MEMO[sequence]; ok {
+	memoId := fmt.Sprintf("trip-%s", sequence)
+
+	if cached, ok := MEMO[memoId]; ok {
 		return cached
 	}
 
 	roundTrips := findAllRoundTripsRaw(keypad, sequence)
 
 	// memoize and return
-	MEMO[sequence] = roundTrips
+	MEMO[memoId] = roundTrips
 	return roundTrips
 }
 
@@ -176,14 +182,16 @@ func findAllRoundTripsRaw(keypad shared.Grid, sequence string) []string {
 }
 
 func findAllRoutes(keypad shared.Grid, start string, end string) []string {
-	if cached, ok := MEMO[start+end]; ok {
+	memoId := fmt.Sprintf("route-%s%s", start, end)
+
+	if cached, ok := MEMO[memoId]; ok {
 		return cached
 	}
 
 	routes := findAllRoutesRaw(keypad, start, end)
 
 	// memoize and return
-	MEMO[start+end] = routes
+	MEMO[memoId] = routes
 	return routes
 }
 
