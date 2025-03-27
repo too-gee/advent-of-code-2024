@@ -133,3 +133,5 @@ There are many sequences of four price changes you could tell the monkey, but fo
 So, by asking the monkey to sell the first time each buyer's prices go down `2`, then up `1`, then down `1`, then up `3`, you would get **`23`** (`7 + 7 + 9`) bananas!
 
 Figure out the best sequence to tell the monkey so that by looking for that same sequence of changes in every buyer's future prices, you get the most bananas in total. **What is the most bananas you can get?**
+
+Your puzzle answer was `2423`.
