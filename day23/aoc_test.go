@@ -5,22 +5,23 @@ import (
 )
 
 type testCase struct {
-	fileName    string
-	function    func([]Link) int
-	expClusters int
+	fileName string
+	function func([]Link) string
+	exp      string
 }
 
 func TestAll(t *testing.T) {
 	cases := []testCase{
-		{"input_small.txt", Part1, 7},
+		{"input_small.txt", Part1, "7"},
+		{"input.txt", Part1, "1437"},
 	}
 
 	for _, c := range cases {
 		input := readInput(c.fileName)
-		clusters := c.function(input)
+		str := c.function(input)
 
-		if clusters != c.expClusters {
-			t.Errorf("%s: expected: %d, got: %d", c.fileName, c.expClusters, clusters)
+		if str != c.exp {
+			t.Errorf("%s: expected: %s, got: %s", c.fileName, c.exp, str)
 		}
 	}
 }
