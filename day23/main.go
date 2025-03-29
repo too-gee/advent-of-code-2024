@@ -20,12 +20,17 @@ func main() {
 	}
 
 	links := readInput(fileName)
+	adjacency := links.AdjacencyList()
 
-	fmt.Printf("There are %s sets of 3 computers with at least 1 't' member\n", Part1(links))
-	fmt.Printf("The password for the largest party is %s\n", Part2(links))
+	fmt.Printf("There are %s sets of 3 computers with at least 1 't' member\n", Part1(adjacency))
+
+	// measure the time needed to run "Part1(links)" 50 times
+
+	//fmt.Println(links.AdjacencyList())
+	//fmt.Printf("The password for the largest party is %s\n", Part2(links))
 }
 
-func readInput(filePath string) []Link {
+func readInput(filePath string) Links {
 	file, err := os.Open(filePath)
 	if err != nil {
 		fmt.Printf("Error opening %s", filePath)
@@ -33,7 +38,7 @@ func readInput(filePath string) []Link {
 	}
 	defer file.Close()
 
-	links := []Link{}
+	links := Links{}
 
 	scanner := bufio.NewScanner(file)
 
@@ -47,32 +52,28 @@ func readInput(filePath string) []Link {
 	return links
 }
 
-func Part1(links Links) string {
+func Part1(adjacency map[string][]string) string {
 	parties := []string{}
 
-	for i := range links {
-		for j := range links {
-			if i == j {
-				continue
-			}
+	for node, neighbors := range adjacency {
+		if node[0] != "t"[0] {
+			continue
+		}
 
-			if !links[i].IsSpecial() {
-				continue
-			}
+		for _, neighbor := range neighbors {
+			for _, second := range adjacency[neighbor] {
+				if second == node {
+					continue
+				}
 
-			if !links[i].Matches(links[j]) {
-				continue
-			}
+				if slices.Contains(adjacency[second], node) {
+					nodes := []string{node, neighbor, second}
+					sort.Strings(nodes)
+					password := strings.Join(nodes, ",")
 
-			tmp := Links{links[i], links[j]}
-			missing := tmp.MissingLinks()[0]
-
-			if slices.Contains(links, missing) {
-				party := Links{links[i], links[j], missing}
-				password := party.GetPassword()
-
-				if !slices.Contains(parties, password) {
-					parties = append(parties, password)
+					if !slices.Contains(parties, password) {
+						parties = append(parties, password)
+					}
 				}
 			}
 		}
@@ -231,6 +232,26 @@ func (links Links) MissingLinks() Links {
 	}
 
 	return missingLinks
+}
+
+func (links Links) AdjacencyList() map[string][]string {
+	list := map[string][]string{}
+
+	for _, node := range links.GetNodes() {
+		list[node] = []string{}
+	}
+
+	for _, link := range links {
+		list[link.a] = append(list[link.a], link.b)
+		list[link.b] = append(list[link.b], link.a)
+	}
+
+	for k := range list {
+		slices.Sort(list[k])
+		list[k] = slices.Compact(list[k])
+	}
+
+	return list
 }
 
 type DumbQueue []Links
