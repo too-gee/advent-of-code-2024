@@ -96,3 +96,5 @@ ka-de
 The LAN party posters say that the **password** to get into the LAN party is the name of every computer at the LAN party, sorted alphabetically, then joined together with commas. (The people running the LAN party are clearly a bunch of nerds.) In this example, the password would be **co,de,ka,ta.**
 
 **What is the password to get into the LAN party?**
+
+Your puzzle answer was `da,do,gx,ly,mb,ns,nt,pz,sc,si,tp,ul,vl`.

@@ -6,7 +6,7 @@ import (
 
 type testCase struct {
 	fileName string
-	function func(Links) string
+	function func(map[string][]string) string
 	exp      string
 }
 
@@ -15,6 +15,7 @@ func TestAll(t *testing.T) {
 		{"input_small.txt", Part1, "7"},
 		{"input.txt", Part1, "1437"},
 		{"input_small.txt", Part2, "co,de,ka,ta"},
+		{"input.txt", Part2, "da,do,gx,ly,mb,ns,nt,pz,sc,si,tp,ul,vl"},
 	}
 
 	for _, c := range cases {

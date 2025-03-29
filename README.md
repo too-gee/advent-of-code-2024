@@ -7,6 +7,7 @@ Here we go again! This year I'm working in golang.
 ``` text
       --------Part 1----------    --------Part 2----------
 Day       Time    Rank  Change        Time    Rank  Change
+ 23       >24h    26722   1334        >24h    24172    231
  22       >24h    28056  -5592        >24h    24403  -5372
  21       >24h    22464   6691        >24h    19031   6334
  20       >24h    29155   3867        >24h    25365   4852
