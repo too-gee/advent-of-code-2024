@@ -18,9 +18,10 @@ func main() {
 		fileName = "input.txt"
 	}
 
-	aMap := readInput(fileName)
+	conns := readInput(fileName)
 
-	fmt.Printf("The z wires output %d\n", Part1(aMap))
+	fmt.Printf("The z wires output %s\n", Part1(conns))
+	fmt.Printf("The swapped wires are %v\n", Part2(conns))
 }
 
 func readInput(filePath string) Connections {
@@ -31,7 +32,7 @@ func readInput(filePath string) Connections {
 	}
 	defer file.Close()
 
-	aMap := Connections{}
+	conns := Connections{}
 
 	scanner := bufio.NewScanner(file)
 
@@ -42,12 +43,12 @@ func readInput(filePath string) Connections {
 			parts := strings.Split(line, ":")
 			value, _ := strconv.Atoi(strings.TrimSpace(parts[1]))
 
-			aMap[parts[0]] = Connection{value: uint8(value)}
+			conns[parts[0]] = Connection{value: uint8(value)}
 		}
 
 		if strings.Contains(line, "->") {
 			parts := strings.Split(line, " ")
-			aMap[parts[4]] = Connection{
+			conns[parts[4]] = Connection{
 				value:    255,
 				operator: parts[1],
 				operand1: parts[0],
@@ -56,45 +57,38 @@ func readInput(filePath string) Connections {
 		}
 	}
 
-	return aMap
+	return conns
 }
 
-func Part1(aMap Connections) int {
-	binaryDigits := ""
+func Part1(conns Connections) string {
+	copy := conns.Copy()
 
-	for _, k := range aMap.Keys() {
-		if k[0] != "z"[0] {
-			continue
-		}
-		newDigit := strconv.Itoa(int(SettleValue(&aMap, k)))
-		binaryDigits = fmt.Sprintf("%s%s", newDigit, binaryDigits)
-	}
-	fmt.Println(binaryDigits)
-
-	decimalValue, _ := strconv.ParseInt(binaryDigits, 2, 64)
-
-	return int(decimalValue)
+	return strconv.Itoa(copy.DecValue("z"))
 }
 
-func SettleValue(aMap *Connections, wire string) uint8 {
-	value := (*aMap)[wire].value
-	operator := (*aMap)[wire].operator
-	operand1 := (*aMap)[wire].operand1
-	operand2 := (*aMap)[wire].operand2
+func Part2(conns Connections) string {
+	return ""
+}
 
-	operand1Val := (*aMap)[operand1].value
-	operand2Val := (*aMap)[operand2].value
+func SettleValue(conns *Connections, wire string) uint8 {
+	value := (*conns)[wire].value
+	operator := (*conns)[wire].operator
+	operand1 := (*conns)[wire].operand1
+	operand2 := (*conns)[wire].operand2
+
+	operand1Val := (*conns)[operand1].value
+	operand2Val := (*conns)[operand2].value
 
 	if value != 255 {
 		return value
 	}
 
 	if operand1Val == 255 {
-		operand1Val = SettleValue(aMap, operand1)
+		operand1Val = SettleValue(conns, operand1)
 	}
 
 	if operand2Val == 255 {
-		operand2Val = SettleValue(aMap, operand2)
+		operand2Val = SettleValue(conns, operand2)
 	}
 
 	switch operator {
@@ -106,14 +100,24 @@ func SettleValue(aMap *Connections, wire string) uint8 {
 		value = operand1Val & operand2Val
 	}
 
-	tmp := (*aMap)[wire]
+	tmp := (*conns)[wire]
 	tmp.value = value
-	(*aMap)[wire] = tmp
+	(*conns)[wire] = tmp
 
 	return value
 }
 
 type Connections map[string]Connection
+
+func (conns Connections) Copy() Connections {
+	copy := make(Connections)
+
+	for k, v := range conns {
+		copy[k] = v.Copy()
+	}
+
+	return copy
+}
 
 func (conns Connections) Keys() []string {
 	keys := make([]string, 0, len(conns))
@@ -126,11 +130,36 @@ func (conns Connections) Keys() []string {
 	return keys
 }
 
+func (conns Connections) DecValue(key string) int {
+	binaryDigits := ""
+
+	for _, k := range conns.Keys() {
+		if k[0] != key[0] {
+			continue
+		}
+		newDigit := strconv.Itoa(int(SettleValue(&conns, k)))
+		binaryDigits = fmt.Sprintf("%s%s", newDigit, binaryDigits)
+	}
+
+	decimalValue, _ := strconv.ParseInt(binaryDigits, 2, 64)
+
+	return int(decimalValue)
+}
+
 type Connection struct {
 	value    uint8
 	operator string
 	operand1 string
 	operand2 string
+}
+
+func (conn Connection) Copy() Connection {
+	return Connection{
+		value:    conn.value,
+		operator: conn.operator,
+		operand1: conn.operand1,
+		operand2: conn.operand2,
+	}
 }
 
 func (conn *Connection) Calculate() {
