@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -67,6 +68,23 @@ func Part1(conns Connections) string {
 }
 
 func Part2(conns Connections) string {
+	for i := range conns.Bits() - 1 {
+
+		num := int(math.Pow(float64(2), float64(i)))
+
+		for _, letter := range []string{"x", "y"} {
+			var tc TestCase
+			if letter == "x" {
+				tc = TestCase{x: num, y: 0, expectedZ: num}
+			} else {
+				tc = TestCase{x: 0, y: num, expectedZ: num}
+			}
+
+			actualZ := conns.Test(tc)
+			fmt.Printf("Case :: %d + %d = %d ? %v (got %d)\n", tc.x, tc.y, tc.expectedZ, tc.expectedZ == actualZ, actualZ)
+		}
+	}
+
 	return ""
 }
 
@@ -107,6 +125,33 @@ func SettleValue(conns *Connections, wire string) uint8 {
 	return value
 }
 
+func decToBin(num int, digits int) string {
+	binary := strconv.FormatInt(int64(num), 2)
+	padded := strings.Repeat("0", digits) + binary
+	return padded[len(padded)-digits:]
+}
+
+func binToDec(binary string) int {
+	num, _ := strconv.ParseInt(binary, 2, 64)
+	return int(num)
+}
+
+type Connection struct {
+	value    uint8
+	operator string
+	operand1 string
+	operand2 string
+}
+
+func (conn Connection) Copy() Connection {
+	return Connection{
+		value:    conn.value,
+		operator: conn.operator,
+		operand1: conn.operand1,
+		operand2: conn.operand2,
+	}
+}
+
 type Connections map[string]Connection
 
 func (conns Connections) Copy() Connections {
@@ -141,36 +186,89 @@ func (conns Connections) DecValue(key string) int {
 		binaryDigits = fmt.Sprintf("%s%s", newDigit, binaryDigits)
 	}
 
-	decimalValue, _ := strconv.ParseInt(binaryDigits, 2, 64)
-
-	return int(decimalValue)
+	return binToDec(binaryDigits)
 }
 
-type Connection struct {
-	value    uint8
-	operator string
-	operand1 string
-	operand2 string
-}
-
-func (conn Connection) Copy() Connection {
-	return Connection{
-		value:    conn.value,
-		operator: conn.operator,
-		operand1: conn.operand1,
-		operand2: conn.operand2,
-	}
-}
-
-func (conn *Connection) Calculate() {
-	if conn.operand1 != "" && conn.operand2 != "" {
-		switch conn.operator {
-		case "XOR":
-			(*conn).value = 0
-		case "OR":
-			(*conn).value = 1
-		case "AND":
-			(*conn).value = 2
+func (conns Connections) Bits() int {
+	bits := 0
+	for i := range conns {
+		if i[0] == "x"[0] {
+			bits++
 		}
 	}
+
+	return bits
+}
+
+func (conns Connections) Test(tc TestCase) int {
+	copy := conns.Copy()
+
+	for _, letter := range []string{"x", "y"} {
+		var value int
+
+		if letter == "x" {
+			value = tc.x
+		} else {
+			value = tc.y
+		}
+
+		digits := strings.Split(decToBin(value, conns.Bits()), "")
+		for i := range digits {
+			digitName := fmt.Sprintf("%s%02d", letter, i)
+			tmp := copy[digitName]
+			intVal, _ := strconv.Atoi(digits[i])
+			tmp.value = uint8(intVal)
+			copy[digitName] = tmp
+		}
+	}
+
+	return copy.DecValue("z")
+}
+
+func (conns Connections) IsValid() bool {
+	bits := conns.Bits()
+	var tc TestCase
+	var num int
+
+	for _, letter := range []string{"x", "y"} {
+		for i := range bits - 1 {
+			num = int(math.Pow(float64(2), float64(i)))
+
+			if letter == "x" {
+				tc = TestCase{x: num, y: 0, expectedZ: num}
+			} else {
+				tc = TestCase{x: 0, y: num, expectedZ: num}
+			}
+
+			if num != conns.Test(tc) {
+				return false
+			}
+		}
+
+		num = int(math.Pow(float64(2), float64(bits))) - 1
+
+		if letter == "x" {
+			tc = TestCase{x: num, y: 1, expectedZ: num + 1}
+		} else {
+			tc = TestCase{x: 1, y: num, expectedZ: num + 1}
+		}
+
+		if num != conns.Test(tc) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (conns *Connections) Swap(a string, b string) {
+	tmp := (*conns)[a]
+	(*conns)[a] = (*conns)[b]
+	(*conns)[b] = tmp
+}
+
+type TestCase struct {
+	x         int
+	y         int
+	expectedZ int
 }
