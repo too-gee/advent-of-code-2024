@@ -15,7 +15,7 @@ func TestAll(t *testing.T) {
 		{"input_small.txt", Part1, "4"},
 		{"input_medium.txt", Part1, "2024"},
 		{"input.txt", Part1, "56729630917616"},
-		{"input_small2.txt", Part2, "z00,z01,z02,z05"},
+		{"input.txt", Part2, "bjm,hsw,nvr,skf,wkr,z07,z13,z18"},
 	}
 
 	for _, c := range cases {

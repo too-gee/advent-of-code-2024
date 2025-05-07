@@ -209,3 +209,5 @@ In this example, two pairs of gates have outputs that are involved in a swap. By
 Of course, your actual system is much more complex than this, and the gates that need their outputs swapped could be **anywhere**, not just attached to a wire starting with `z`. If you were to determine that you need to swap output wires `aaa` with `eee`, `ooo` with `z99`, `bbb` with `ccc`, and `aoc` with `z24`, your answer would be **`aaa,aoc,bbb,ccc,eee,ooo,z24,z99`.**
 
 Your system of gates and wires has **four** pairs of gates which need their output wires swapped - **eight** wires in total. Determine which four pairs of gates need their outputs swapped so that your system correctly performs addition; **what do you get if you sort the names of the eight wires involved in a swap and then join those names with commas?**
+
+Your puzzle answer was `bjm,hsw,nvr,skf,wkr,z07,z13,z18`.

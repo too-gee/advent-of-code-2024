@@ -21,6 +21,7 @@ func main() {
 	conns := readInput(fileName)
 
 	fmt.Printf("The z wires output %s\n", Part1(conns))
+	fmt.Printf("The swapped gates are %s\n", Part2(conns))
 }
 
 func readInput(filePath string) Connections {
@@ -133,4 +134,96 @@ func (conns Connections) Keys() []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+func (conns Connections) Find(operand1 string, operand2 string, operator string) string {
+	if operand1 == "" && operand2 == "" {
+		return ""
+	}
+
+	for i := range conns {
+		if (operator == conns[i].operator) &&
+			(operand1 == "" || operand1 == conns[i].operand1 || operand1 == conns[i].operand2) &&
+			(operand2 == "" || operand2 == conns[i].operand1 || operand2 == conns[i].operand2) {
+			return i
+		}
+	}
+
+	return ""
+}
+
+func Part2(conns Connections) string {
+	bits := 0
+	for i := range conns {
+		if i[0] == "x"[0] {
+			bits++
+		}
+	}
+
+	oops := []string{}
+	carry_output := ""
+
+	for i := range bits {
+		xIn := fmt.Sprintf("x%02d", i)
+		yIn := fmt.Sprintf("y%02d", i)
+		expectedZOut := fmt.Sprintf("z%02d", i)
+
+		if i == 0 {
+			zOut := conns.Find(xIn, yIn, "XOR")
+			cOut := conns.Find(xIn, yIn, "AND")
+
+			if zOut != expectedZOut {
+				oops = append(oops, zOut)
+			}
+
+			if cOut[0] == "z"[0] {
+				oops = append(oops, cOut)
+				carry_output = ""
+			} else {
+				carry_output = cOut
+			}
+		} else {
+			iOut := conns.Find(xIn, yIn, "XOR")
+			kOut := conns.Find(xIn, yIn, "AND")
+
+			jOut := conns.Find(carry_output, "", "AND")
+			if jOut == "" || carry_output == "" {
+				jOut = conns.Find(iOut, "", "AND")
+			}
+			jGate := conns[jOut]
+
+			if iOut != jGate.operand1 && iOut != jGate.operand2 {
+				oops = append(oops, iOut)
+			}
+
+			zOut := conns.Find(jGate.operand1, jGate.operand2, "XOR")
+			if zOut != expectedZOut {
+				oops = append(oops, zOut)
+			}
+
+			cOut := conns.Find(jOut, "", "OR")
+			if cOut == "" {
+				cOut = conns.Find(kOut, "", "OR")
+			}
+			cGate := conns[cOut]
+
+			if cGate.operand1 != kOut && cGate.operand2 != kOut {
+				oops = append(oops, kOut)
+			}
+
+			if cGate.operand1 != jOut && cGate.operand2 != jOut {
+				oops = append(oops, jOut)
+			}
+
+			if cOut != "" && i != bits-1 && cOut[0] == "z"[0] {
+				oops = append(oops, cOut)
+				carry_output = ""
+			} else {
+				carry_output = cOut
+			}
+		}
+	}
+
+	sort.Strings(oops)
+	return strings.Join(oops, ",")
 }
