@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 )
+
+var descendants map[string][]string
 
 func main() {
 	var fileName string
@@ -21,8 +24,24 @@ func main() {
 
 	conns := readInput(fileName)
 
+	descendants := make(map[string][]string)
+
+	for k, v := range conns {
+		if v.operand1 == "" {
+			continue
+		}
+
+		mapAppend(descendants, v.operand1, k)
+		mapAppend(descendants, v.operand2, k)
+	}
+
 	fmt.Printf("The z wires output %s\n", Part1(conns))
 	fmt.Printf("The swapped wires are %v\n", Part2(conns))
+
+	//tc := TestCase{x: 0, y: 0, expectedZ: 0}
+	//fmt.Println(conns.Test(tc))
+	valid, _ := conns.IsValid()
+	fmt.Println(valid)
 }
 
 func readInput(filePath string) Connections {
@@ -64,26 +83,13 @@ func readInput(filePath string) Connections {
 func Part1(conns Connections) string {
 	copy := conns.Copy()
 
-	return strconv.Itoa(copy.DecValue("z"))
+	return strconv.Itoa(copy.GetValue("z").dec)
 }
 
 func Part2(conns Connections) string {
-	for i := range conns.Bits() - 1 {
+	copy := conns.Copy()
 
-		num := int(math.Pow(float64(2), float64(i)))
-
-		for _, letter := range []string{"x", "y"} {
-			var tc TestCase
-			if letter == "x" {
-				tc = TestCase{x: num, y: 0, expectedZ: num}
-			} else {
-				tc = TestCase{x: 0, y: num, expectedZ: num}
-			}
-
-			actualZ := conns.Test(tc)
-			fmt.Printf("Case :: %d + %d = %d ? %v (got %d)\n", tc.x, tc.y, tc.expectedZ, tc.expectedZ == actualZ, actualZ)
-		}
-	}
+	fmt.Println(copy.GetValue("z"))
 
 	return ""
 }
@@ -128,6 +134,7 @@ func SettleValue(conns *Connections, wire string) uint8 {
 func decToBin(num int, digits int) string {
 	binary := strconv.FormatInt(int64(num), 2)
 	padded := strings.Repeat("0", digits) + binary
+
 	return padded[len(padded)-digits:]
 }
 
@@ -175,20 +182,6 @@ func (conns Connections) Keys() []string {
 	return keys
 }
 
-func (conns Connections) DecValue(key string) int {
-	binaryDigits := ""
-
-	for _, k := range conns.Keys() {
-		if k[0] != key[0] {
-			continue
-		}
-		newDigit := strconv.Itoa(int(SettleValue(&conns, k)))
-		binaryDigits = fmt.Sprintf("%s%s", newDigit, binaryDigits)
-	}
-
-	return binToDec(binaryDigits)
-}
-
 func (conns Connections) Bits() int {
 	bits := 0
 	for i := range conns {
@@ -200,32 +193,67 @@ func (conns Connections) Bits() int {
 	return bits
 }
 
-func (conns Connections) Test(tc TestCase) int {
+func (conns Connections) Test(tc TestCase) (bool, []int, Value) {
 	copy := conns.Copy()
 
-	for _, letter := range []string{"x", "y"} {
-		var value int
+	copy.SetValue("x", tc.x)
+	copy.SetValue("y", tc.y)
 
-		if letter == "x" {
-			value = tc.x
-		} else {
-			value = tc.y
-		}
+	actualZ := copy.GetValue("z")
 
-		digits := strings.Split(decToBin(value, conns.Bits()), "")
-		for i := range digits {
-			digitName := fmt.Sprintf("%s%02d", letter, i)
-			tmp := copy[digitName]
-			intVal, _ := strconv.Atoi(digits[i])
-			tmp.value = uint8(intVal)
-			copy[digitName] = tmp
+	fmt.Printf("%d + %d = %d\n", tc.x.dec, tc.y.dec, actualZ.dec)
+
+	if actualZ.dec == tc.expectedZ.dec {
+		return true, nil, actualZ
+	}
+
+	digits := conns.Bits()
+
+	wrongDigits := []int{}
+
+	for i := range digits {
+		if tc.expectedZ.bin[i] != actualZ.bin[i] {
+			wrongDigits = append(wrongDigits, i)
 		}
 	}
 
-	return copy.DecValue("z")
+	return false, wrongDigits, actualZ
 }
 
-func (conns Connections) IsValid() bool {
+func (conns *Connections) SetValue(prefix string, value Value) {
+	for i := range value.bin {
+		key := fmt.Sprintf("%s%d", prefix, i)
+		rawBitValue, _ := strconv.Atoi(value.bin[i:i])
+		bitValue := uint8(rawBitValue)
+
+		if (*conns)[key].value == bitValue {
+			continue
+		}
+
+		tmp := (*conns)[key]
+		tmp.value = uint8(value.dec)
+		(*conns)[key] = tmp
+	}
+}
+
+func (conns Connections) GetValue(prefix string) Value {
+	binaryDigits := ""
+
+	for _, k := range conns.Keys() {
+		if k[0] != prefix[0] {
+			continue
+		}
+		newDigit := strconv.Itoa(int(SettleValue(&conns, k)))
+		binaryDigits = fmt.Sprintf("%s%s", newDigit, binaryDigits)
+	}
+
+	return Value{
+		dec: binToDec(binaryDigits),
+		bin: binaryDigits,
+	}
+}
+
+func (conns Connections) IsValid() (bool, int) {
 	bits := conns.Bits()
 	var tc TestCase
 	var num int
@@ -235,30 +263,52 @@ func (conns Connections) IsValid() bool {
 			num = int(math.Pow(float64(2), float64(i)))
 
 			if letter == "x" {
-				tc = TestCase{x: num, y: 0, expectedZ: num}
+				tc = TestCase{
+					x:         valueFromDec(num, bits),
+					y:         valueFromDec(0, bits),
+					expectedZ: valueFromDec(num, bits),
+				}
 			} else {
-				tc = TestCase{x: 0, y: num, expectedZ: num}
+				tc = TestCase{
+					x:         valueFromDec(0, bits),
+					y:         valueFromDec(num, bits),
+					expectedZ: valueFromDec(num, bits),
+				}
 			}
 
-			if num != conns.Test(tc) {
-				return false
+			pass, _, result := conns.Test(tc)
+
+			if !pass {
+				fmt.Println(result)
+				return false, i
 			}
 		}
 
 		num = int(math.Pow(float64(2), float64(bits))) - 1
 
 		if letter == "x" {
-			tc = TestCase{x: num, y: 1, expectedZ: num + 1}
+			tc = TestCase{
+				x:         valueFromDec(num, bits),
+				y:         valueFromDec(1, bits),
+				expectedZ: valueFromDec(num, bits),
+			}
 		} else {
-			tc = TestCase{x: 1, y: num, expectedZ: num + 1}
+			tc = TestCase{
+				x:         valueFromDec(1, bits),
+				y:         valueFromDec(num, bits),
+				expectedZ: valueFromDec(num, bits),
+			}
 		}
 
-		if num != conns.Test(tc) {
-			return false
+		pass, _, result := conns.Test(tc)
+
+		if !pass {
+			fmt.Println(result)
+			return false, bits
 		}
 	}
 
-	return true
+	return true, 0
 }
 
 func (conns *Connections) Swap(a string, b string) {
@@ -268,7 +318,36 @@ func (conns *Connections) Swap(a string, b string) {
 }
 
 type TestCase struct {
-	x         int
-	y         int
-	expectedZ int
+	x         Value
+	y         Value
+	expectedZ Value
+}
+
+type Value struct {
+	dec int
+	bin string
+}
+
+func valueFromDec(value int, bits int) Value {
+	return Value{
+		dec: value,
+		bin: decToBin(value, bits),
+	}
+}
+
+func valueFromBin(value string) Value {
+	return Value{
+		dec: binToDec(value),
+		bin: value,
+	}
+}
+
+func mapAppend(descMap map[string][]string, key string, value string) {
+	if _, ok := descMap[key]; !ok {
+		descMap[key] = make([]string, 0)
+	}
+
+	if !slices.Contains(descMap[key], value) {
+		descMap[key] = append(descMap[key], value)
+	}
 }
